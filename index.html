@@ -977,11 +977,37 @@
     <div id="teacher-error" class="error-msg">⚠️ CPF ou data de nascimento incorretos.</div>
     <div class="form-group">
       <label>CPF</label>
-      <input type="text" id="t-cpf" placeholder="000.000.000-00" oninput="maskCPF(this)" maxlength="14">
+      <input type="text" id="t-cpf" placeholder="000.000.000-00" oninput="maskCPF(this)" maxlength="14"
+        inputmode="numeric" autocomplete="off">
     </div>
     <div class="form-group">
-      <label>Data de Nascimento (senha)</label>
-      <input type="date" id="t-dob">
+      <label>Data de Nascimento</label>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <div style="flex:1;text-align:center;">
+          <input type="text" id="t-dob-dia" placeholder="DD" maxlength="2"
+            inputmode="numeric" pattern="[0-9]*"
+            style="text-align:center;font-size:22px;font-weight:700;letter-spacing:2px;padding:12px 4px;width:100%;"
+            oninput="dobAdvance(this,'t-dob-mes',2)" autocomplete="off">
+          <div style="font-size:10px;color:var(--text3);margin-top:4px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;">Dia</div>
+        </div>
+        <div style="font-size:24px;color:var(--border2);font-weight:300;padding-bottom:16px;">/</div>
+        <div style="flex:1;text-align:center;">
+          <input type="text" id="t-dob-mes" placeholder="MM" maxlength="2"
+            inputmode="numeric" pattern="[0-9]*"
+            style="text-align:center;font-size:22px;font-weight:700;letter-spacing:2px;padding:12px 4px;width:100%;"
+            oninput="dobAdvance(this,'t-dob-ano',2)" autocomplete="off">
+          <div style="font-size:10px;color:var(--text3);margin-top:4px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;">Mês</div>
+        </div>
+        <div style="font-size:24px;color:var(--border2);font-weight:300;padding-bottom:16px;">/</div>
+        <div style="flex:2;text-align:center;">
+          <input type="text" id="t-dob-ano" placeholder="AAAA" maxlength="4"
+            inputmode="numeric" pattern="[0-9]*"
+            style="text-align:center;font-size:22px;font-weight:700;letter-spacing:2px;padding:12px 4px;width:100%;"
+            oninput="dobAdvance(this,null,4)"
+            onkeydown="if(event.key==='Enter') loginTeacher()" autocomplete="off">
+          <div style="font-size:10px;color:var(--text3);margin-top:4px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;">Ano</div>
+        </div>
+      </div>
     </div>
     <button class="btn btn-primary" onclick="loginTeacher()">🔓 Entrar</button>
   </div>
@@ -1528,7 +1554,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
   getFirestore, doc, collection,
-  getDocs, setDoc, deleteDoc, writeBatch
+  getDocs, setDoc, deleteDoc, onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -1607,49 +1633,160 @@ const DEFAULT_STATE = {
   ],
 };
 
-async function loadState() {
-  try {
-    const base = JSON.parse(JSON.stringify(DEFAULT_STATE));
-
-    // Config global (senha, taxas, tipos, contadores)
-    try {
-      const configSnap = await getDocs(collection(db, 'config'));
-      configSnap.forEach(d => {
-        if (d.id === 'global') Object.assign(base, d.data());
-      });
-    } catch(e) { console.warn('Config não encontrada, usando defaults.', e); }
-
-    // Professores
-    try {
-      const teachersSnap = await getDocs(collection(db, 'teachers'));
-      if (!teachersSnap.empty) {
-        base.teachers = [];
-        teachersSnap.forEach(d => base.teachers.push({ id: Number(d.id), ...d.data() }));
-      }
-    } catch(e) { console.warn('Erro ao carregar professores.', e); }
-
-    // Atividades
-    try {
-      const activitiesSnap = await getDocs(collection(db, 'activities'));
-      if (!activitiesSnap.empty) {
-        base.activities = [];
-        activitiesSnap.forEach(d => base.activities.push({ id: Number(d.id), ...d.data() }));
-      }
-    } catch(e) { console.warn('Erro ao carregar atividades.', e); }
-
-    base.currentTeacher = null;
-    base.confirmActivityId = null;
-    return base;
-  } catch(e) {
-    console.warn('Erro geral ao carregar estado:', e);
-    return JSON.parse(JSON.stringify(DEFAULT_STATE));
-  }
-}
-
-// saveState agora é no-op — cada função salva diretamente no Firebase
+// saveState é no-op — cada função salva diretamente no Firebase
 function saveState() { /* Firebase: salvo diretamente em cada operação */ }
 
 let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+
+// ══════════════════════════════════════════════════════
+// SINCRONIZAÇÃO EM TEMPO REAL — onSnapshot
+// Qualquer alteração feita em outro dispositivo é
+// refletida automaticamente na tela de todos.
+// ══════════════════════════════════════════════════════
+let _fbReady = { config: false, teachers: false, activities: false };
+
+function _checkAllReady() {
+  return _fbReady.config && _fbReady.teachers && _fbReady.activities;
+}
+
+function _refreshAllUI() {
+  populateTeacherSelect();
+  refreshActivityTypeSelect();
+  const coordActive = document.getElementById('app-coord')?.classList.contains('active');
+  const teacherActive = document.getElementById('app-teacher')?.classList.contains('active');
+  if (coordActive) {
+    renderCoordDashboard();
+    renderTeachersTable();
+    renderActivitiesTable();
+    renderRelatorio();
+    updateAnaliseBadge();
+  }
+  if (teacherActive && state.currentTeacher) {
+    const updated = state.teachers.find(t => t.id === state.currentTeacher.id);
+    if (updated) state.currentTeacher = updated;
+    renderTeacherDashboard();
+    renderTeacherActivities();
+    renderTeacherHistory();
+  }
+}
+
+function startRealtimeSync() {
+  // Config global
+  onSnapshot(collection(db, 'config'), snap => {
+    snap.forEach(d => {
+      if (d.id === 'global') {
+        const data = d.data();
+        state.coordPasswordHash = data.coordPasswordHash ?? state.coordPasswordHash;
+        state.hourlyRates       = data.hourlyRates       ?? state.hourlyRates;
+        state.activityTypes     = data.activityTypes     ?? state.activityTypes;
+        state.nextTeacherId     = data.nextTeacherId     ?? state.nextTeacherId;
+        state.nextActivityId    = data.nextActivityId    ?? state.nextActivityId;
+      }
+    });
+    const firstLoad = !_fbReady.config;
+    _fbReady.config = true;
+    if (!firstLoad && _checkAllReady()) _refreshAllUI();
+  }, e => { console.warn('onSnapshot config:', e); _fbReady.config = true; });
+
+  // Professores
+  onSnapshot(collection(db, 'teachers'), snap => {
+    state.teachers = [];
+    snap.forEach(d => state.teachers.push({ id: Number(d.id), ...d.data() }));
+    const firstLoad = !_fbReady.teachers;
+    _fbReady.teachers = true;
+    if (!firstLoad && _checkAllReady()) _refreshAllUI();
+  }, e => { console.warn('onSnapshot teachers:', e); _fbReady.teachers = true; });
+
+  // Atividades
+  onSnapshot(collection(db, 'activities'), snap => {
+    state.activities = [];
+    snap.forEach(d => state.activities.push({ id: Number(d.id), ...d.data() }));
+    const firstLoad = !_fbReady.activities;
+    _fbReady.activities = true;
+    if (!firstLoad && _checkAllReady()) _refreshAllUI();
+  }, e => { console.warn('onSnapshot activities:', e); _fbReady.activities = true; });
+}
+
+// ══════════════════════════════════════════════════════
+// MIGRAÇÃO localStorage → Firebase
+// Roda apenas uma vez: se o Firebase estiver vazio e
+// houver dados salvos no localStorage, envia tudo.
+// ══════════════════════════════════════════════════════
+async function migrateFromLocalStorage() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) return false;
+    const local = JSON.parse(saved);
+
+    // Verifica se o Firebase já tem dados
+    const teachersSnap = await getDocs(collection(db, 'teachers'));
+    if (!teachersSnap.empty) {
+      console.log('[Migração] Firebase já possui dados, pulando migração.');
+      return false;
+    }
+
+    console.log('[Migração] Enviando dados do localStorage para o Firebase...');
+
+    // Migra professores
+    for (const t of (local.teachers || [])) {
+      const { id, ...data } = t;
+      await setDoc(doc(db, 'teachers', String(id)), data);
+    }
+
+    // Migra atividades (sem o campo comprovante — pode ser grande demais)
+    for (const a of (local.activities || [])) {
+      const { id, comprovante, ...data } = a;
+      await setDoc(doc(db, 'activities', String(id)), { ...data, comprovante: null });
+    }
+
+    // Migra config global
+    await setDoc(doc(db, 'config', 'global'), {
+      coordPasswordHash: local.coordPasswordHash ?? state.coordPasswordHash,
+      hourlyRates:       local.hourlyRates       ?? state.hourlyRates,
+      activityTypes:     local.activityTypes     ?? state.activityTypes,
+      nextTeacherId:     local.nextTeacherId      ?? state.nextTeacherId,
+      nextActivityId:    local.nextActivityId     ?? state.nextActivityId,
+    });
+
+    // Marca como migrado para não rodar de novo
+    localStorage.setItem(STORAGE_KEY + '_migrated', '1');
+    console.log('[Migração] Concluída com sucesso!');
+    return true;
+  } catch(e) {
+    console.warn('[Migração] Erro:', e);
+    return false;
+  }
+}
+
+async function loadState() {
+  // Tenta migrar dados do localStorage se o Firebase estiver vazio
+  const alreadyMigrated = localStorage.getItem(STORAGE_KEY + '_migrated');
+  if (!alreadyMigrated) {
+    await migrateFromLocalStorage();
+  }
+
+  // Carrega dados do Firebase
+  try {
+    const [configSnap, teachersSnap, activitiesSnap] = await Promise.all([
+      getDocs(collection(db, 'config')),
+      getDocs(collection(db, 'teachers')),
+      getDocs(collection(db, 'activities')),
+    ]);
+    configSnap.forEach(d => { if (d.id === 'global') Object.assign(state, d.data()); });
+    if (!teachersSnap.empty) {
+      state.teachers = [];
+      teachersSnap.forEach(d => state.teachers.push({ id: Number(d.id), ...d.data() }));
+    }
+    if (!activitiesSnap.empty) {
+      state.activities = [];
+      activitiesSnap.forEach(d => state.activities.push({ id: Number(d.id), ...d.data() }));
+    }
+  } catch(e) {
+    console.warn('Erro no carregamento inicial, usando defaults:', e);
+  }
+  state.currentTeacher = null;
+  state.confirmActivityId = null;
+}
 
 // ══════════════════════════════════
 // NAVIGATION
@@ -1688,9 +1825,19 @@ function coordNav(panel, el) {
 // ══════════════════════════════════
 // AUTH
 // ══════════════════════════════════
+function dobAdvance(el, nextId, maxLen) {
+  el.value = el.value.replace(/\D/g, '');
+  if (nextId && el.value.length >= maxLen) {
+    document.getElementById(nextId).focus();
+  }
+}
+
 function loginTeacher() {
   const cpf = document.getElementById('t-cpf').value.trim();
-  const dob = document.getElementById('t-dob').value;
+  const dia = document.getElementById('t-dob-dia').value.padStart(2,'0');
+  const mes = document.getElementById('t-dob-mes').value.padStart(2,'0');
+  const ano = document.getElementById('t-dob-ano').value;
+  const dob = ano + '-' + mes + '-' + dia;
   const teacher = state.teachers.find(t => t.cpf === cpf && t.dob === dob);
   if (!teacher) {
     document.getElementById('teacher-error').style.display = 'block'; return;
@@ -1734,7 +1881,9 @@ async function loginCoord() {
 function logout() {
   state.currentTeacher = null;
   document.getElementById('t-cpf').value = '';
-  document.getElementById('t-dob').value = '';
+  document.getElementById('t-dob-dia').value = '';
+  document.getElementById('t-dob-mes').value = '';
+  document.getElementById('t-dob-ano').value = '';
   document.getElementById('teacher-error').style.display = 'none';
   document.getElementById('c-user').value = '';
   document.getElementById('c-pass').value = '';
@@ -2958,7 +3107,7 @@ updateOnlineStatus();
 // ══════════════════════════════════
 Object.assign(window, {
   showPage, teacherNav, coordNav,
-  loginTeacher, loginCoord, logout,
+  dobAdvance, loginTeacher, loginCoord, logout,
   saveTeacher, openAddTeacherModal, openEditTeacherModal, deleteTeacher,
   saveActivity, openAddModal, openEditActivityModal, deleteActivity,
   confirmActivity, doConfirm,
@@ -3002,10 +3151,9 @@ Object.assign(window, {
   document.body.appendChild(loadingDiv);
 
   try {
-    state = await loadState();
+    await loadState();
   } catch(e) {
     console.error('Falha ao carregar Firebase, usando dados locais:', e);
-    state = JSON.parse(JSON.stringify(DEFAULT_STATE));
   }
 
   // Remove tela de carregamento
@@ -3017,6 +3165,11 @@ Object.assign(window, {
   setDate('t-date');
   setDate('c-date');
   updateOnlineStatus();
+
+  // Ativa sincronização em tempo real (onSnapshot)
+  // A partir daqui, qualquer alteração em outro dispositivo
+  // atualiza a tela automaticamente.
+  startRealtimeSync();
 
   // Handle deep links (shortcuts PWA)
   const hash = location.hash;
