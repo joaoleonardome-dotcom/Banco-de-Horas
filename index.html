@@ -1,0 +1,2912 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Banco de Horas — Arena</title>
+
+<!-- ═══ PWA META TAGS ═══ -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Banco de Horas">
+<meta name="application-name" content="Banco de Horas">
+<meta name="theme-color" content="#0F9A8A">
+<meta name="description" content="Sistema de gestão de horas extras para professores">
+
+<!-- Manifest -->
+<link rel="manifest" href="manifest.json">
+
+<!-- Apple Touch Icons -->
+<link rel="apple-touch-icon" href="icons/icon-152x152.png">
+<link rel="apple-touch-icon" sizes="180x180" href="icons/icon-192x192.png">
+
+<!-- Favicon -->
+<link rel="icon" type="image/png" sizes="32x32" href="icons/icon-96x96.png">
+<link rel="icon" type="image/png" sizes="16x16" href="icons/icon-72x72.png">
+<style>
+  :root {
+    --cyan: #2DD4BF;
+    --cyan-dark: #0F9A8A;
+    --cyan-light: #CCFBF1;
+    --cyan-xlight: #F0FDFA;
+    --mint: #A7F3D0;
+    --sage: #6EE7B7;
+    --bg: #F8FFFE;
+    --surface: #FFFFFF;
+    --surface2: #F0FDFA;
+    --border: #D1FAF4;
+    --border2: #E2E8F0;
+    --text: #1E3A35;
+    --text2: #4A7C75;
+    --text3: #94A3B8;
+    --danger: #F87171;
+    --danger-bg: #FEF2F2;
+    --warn: #FBBF24;
+    --warn-bg: #FFFBEB;
+    --success: #34D399;
+    --success-bg: #ECFDF5;
+    --purple: #A78BFA;
+    --purple-bg: #F5F3FF;
+    --blue: #60A5FA;
+    --blue-bg: #EFF6FF;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow: 0 4px 16px rgba(45,212,191,0.10), 0 2px 6px rgba(0,0,0,0.06);
+    --shadow-lg: 0 8px 32px rgba(45,212,191,0.15), 0 4px 12px rgba(0,0,0,0.08);
+    --radius: 14px;
+    --radius-sm: 8px;
+    --radius-lg: 20px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+  }
+
+  /* ── PAGES ── */
+  .page { display: none; }
+  .page.active { display: flex; }
+
+  /* ══════════════════════════════════
+     LANDING PAGE
+  ══════════════════════════════════ */
+  #landing {
+    min-height: 100vh;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #E6FFFA 0%, #F0FDFA 40%, #ECFDF5 100%);
+    position: relative;
+    overflow: hidden;
+  }
+
+  #landing::before {
+    content: '';
+    position: absolute;
+    width: 600px; height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(45,212,191,0.12) 0%, transparent 70%);
+    top: -150px; right: -150px;
+  }
+  #landing::after {
+    content: '';
+    position: absolute;
+    width: 400px; height: 400px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(167,243,208,0.15) 0%, transparent 70%);
+    bottom: -100px; left: -100px;
+  }
+
+  .landing-logo {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 12px;
+    z-index: 1;
+  }
+  .landing-logo .icon-wrap {
+    width: 56px; height: 56px; border-radius: 16px;
+    background: linear-gradient(135deg, var(--cyan), var(--cyan-dark));
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 16px rgba(45,212,191,0.4);
+    font-size: 26px;
+  }
+  .landing-logo h1 {
+    font-size: 32px; font-weight: 800;
+    background: linear-gradient(135deg, var(--cyan-dark), var(--cyan));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
+  }
+
+  .landing-subtitle {
+    color: var(--text2); font-size: 15px; margin-bottom: 48px;
+    z-index: 1; text-align: center;
+  }
+
+  .landing-cards {
+    display: flex; gap: 24px; z-index: 1;
+    flex-wrap: wrap; justify-content: center;
+  }
+
+  .access-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 36px 40px;
+    width: 280px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: var(--shadow);
+  }
+  .access-card:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--cyan);
+  }
+  .access-card .card-icon {
+    width: 72px; height: 72px; border-radius: 20px;
+    margin: 0 auto 20px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 34px;
+  }
+  .access-card.teacher .card-icon { background: var(--cyan-light); }
+  .access-card.coord .card-icon { background: var(--purple-bg); }
+  .access-card h2 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+  .access-card p { color: var(--text2); font-size: 13px; line-height: 1.5; }
+  .access-card .card-btn {
+    margin-top: 24px;
+    display: inline-block;
+    padding: 10px 28px;
+    border-radius: 50px;
+    font-size: 13px; font-weight: 600;
+    transition: all 0.2s;
+  }
+  .access-card.teacher .card-btn {
+    background: var(--cyan-light); color: var(--cyan-dark);
+  }
+  .access-card.teacher:hover .card-btn {
+    background: var(--cyan); color: #fff;
+  }
+  .access-card.coord .card-btn {
+    background: var(--purple-bg); color: #7C3AED;
+  }
+  .access-card.coord:hover .card-btn {
+    background: #7C3AED; color: #fff;
+  }
+
+  /* ══════════════════════════════════
+     LOGIN PAGES
+  ══════════════════════════════════ */
+  #login-teacher, #login-coord {
+    min-height: 100vh;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #E6FFFA 0%, #F0FDFA 60%, #ECFDF5 100%);
+  }
+
+  .login-box {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    padding: 48px;
+    width: 420px;
+    max-width: 95vw;
+  }
+  .login-back {
+    display: flex; align-items: center; gap: 6px;
+    color: var(--text2); font-size: 13px;
+    cursor: pointer; margin-bottom: 32px;
+    width: fit-content;
+    transition: color 0.2s;
+  }
+  .login-back:hover { color: var(--cyan-dark); }
+
+  .login-header { margin-bottom: 32px; }
+  .login-header .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 14px; border-radius: 50px;
+    font-size: 12px; font-weight: 600; margin-bottom: 16px;
+  }
+  .badge-teacher { background: var(--cyan-light); color: var(--cyan-dark); }
+  .badge-coord { background: var(--purple-bg); color: #7C3AED; }
+
+  .login-header h2 { font-size: 24px; font-weight: 800; margin-bottom: 4px; }
+  .login-header p { color: var(--text2); font-size: 13px; }
+
+  .form-group { margin-bottom: 20px; }
+  .form-group label {
+    display: block; font-size: 12px; font-weight: 600;
+    color: var(--text2); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .form-group input, .form-group select, .form-group textarea {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1.5px solid var(--border2);
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    color: var(--text);
+    background: var(--surface);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    font-family: inherit;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 0 3px rgba(45,212,191,0.15);
+  }
+  .form-group textarea { resize: vertical; min-height: 80px; }
+
+  .checkbox-group { display: flex; flex-wrap: wrap; gap: 10px; }
+  .checkbox-item {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 14px; border-radius: 50px;
+    border: 1.5px solid var(--border2);
+    cursor: pointer; font-size: 13px; font-weight: 500;
+    transition: all 0.2s; user-select: none;
+  }
+  .checkbox-item.checked {
+    background: var(--cyan-light); border-color: var(--cyan); color: var(--cyan-dark);
+  }
+  .checkbox-item input { display: none; }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 13px 24px; border-radius: var(--radius-sm);
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    border: none; transition: all 0.2s; font-family: inherit;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--cyan), var(--cyan-dark));
+    color: #fff; width: 100%;
+    box-shadow: 0 4px 14px rgba(45,212,191,0.35);
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(45,212,191,0.45); }
+  .btn-purple {
+    background: linear-gradient(135deg, #A78BFA, #7C3AED);
+    color: #fff; width: 100%;
+    box-shadow: 0 4px 14px rgba(124,58,237,0.3);
+  }
+  .btn-purple:hover { transform: translateY(-1px); }
+  .btn-outline {
+    background: transparent; border: 1.5px solid var(--border2); color: var(--text2);
+  }
+  .btn-outline:hover { border-color: var(--cyan); color: var(--cyan-dark); background: var(--cyan-xlight); }
+  .btn-danger {
+    background: var(--danger-bg); color: var(--danger); border: 1.5px solid #FECACA;
+  }
+  .btn-sm { padding: 7px 16px; font-size: 12px; width: auto !important; }
+  .btn-xs { padding: 5px 12px; font-size: 11px; border-radius: 6px; }
+
+  .error-msg {
+    background: var(--danger-bg); color: var(--danger);
+    border: 1px solid #FECACA; border-radius: var(--radius-sm);
+    padding: 10px 14px; font-size: 13px; margin-bottom: 16px; display: none;
+  }
+
+  /* ══════════════════════════════════
+     APP SHELL
+  ══════════════════════════════════ */
+  #app-teacher, #app-coord {
+    flex-direction: row; min-height: 100vh;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 240px; min-height: 100vh;
+    background: var(--surface);
+    border-right: 1.5px solid var(--border);
+    display: flex; flex-direction: column;
+    position: fixed; top: 0; left: 0; bottom: 0;
+    z-index: 100;
+  }
+  .sidebar-logo {
+    padding: 24px 20px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    text-align: center;
+  }
+  .sidebar-logo .logo-icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--cyan), var(--cyan-dark));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+  .sidebar-logo span { font-size: 17px; font-weight: 800; color: var(--text); }
+  .sidebar-logo small { font-size: 10px; color: var(--text2); display: block; }
+
+  .sidebar-user {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .user-avatar {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--cyan-light), var(--mint));
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; color: var(--cyan-dark); font-size: 14px; flex-shrink: 0;
+  }
+  .user-avatar.purple {
+    background: linear-gradient(135deg, #EDE9FE, #DDD6FE);
+    color: #7C3AED;
+  }
+  .user-info { min-width: 0; }
+  .user-info strong { display: block; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .user-info span { font-size: 11px; color: var(--text2); }
+
+  .sidebar-nav { padding: 16px 12px; flex: 1; overflow-y: auto; }
+  .nav-section { margin-bottom: 8px; }
+  .nav-label {
+    font-size: 10px; font-weight: 700; color: var(--text3);
+    text-transform: uppercase; letter-spacing: 1px;
+    padding: 0 8px; margin-bottom: 6px; display: block;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: var(--radius-sm);
+    cursor: pointer; font-size: 13px; font-weight: 500;
+    color: var(--text2); transition: all 0.18s;
+    margin-bottom: 2px;
+  }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background: var(--cyan-light); color: var(--cyan-dark); font-weight: 600; }
+  .nav-item .nav-icon { font-size: 16px; flex-shrink: 0; }
+  .nav-badge {
+    margin-left: auto; background: var(--cyan); color: #fff;
+    font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 50px;
+  }
+
+  .sidebar-footer {
+    padding: 16px 12px;
+    border-top: 1px solid var(--border);
+  }
+  .logout-btn {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 12px; border-radius: var(--radius-sm);
+    cursor: pointer; font-size: 13px; color: var(--danger);
+    transition: all 0.18s;
+  }
+  .logout-btn:hover { background: var(--danger-bg); }
+
+  /* MAIN CONTENT */
+  .main-content {
+    margin-left: 240px;
+    flex: 1; min-height: 100vh;
+    background: var(--bg);
+    display: flex; flex-direction: column;
+  }
+
+  .topbar {
+    background: var(--surface); border-bottom: 1.5px solid var(--border);
+    padding: 16px 28px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 50;
+  }
+  .topbar h1 { font-size: 18px; font-weight: 700; }
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+  .topbar-date { font-size: 12px; color: var(--text2); }
+
+  .content-area { padding: 28px; flex: 1; }
+
+  /* PANELS */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* STATS GRID */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-bottom: 28px; }
+  .stat-card {
+    background: var(--surface); border-radius: var(--radius); padding: 20px;
+    border: 1.5px solid var(--border); box-shadow: var(--shadow-sm);
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .stat-header { display: flex; align-items: center; justify-content: space-between; }
+  .stat-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .stat-icon.cyan { background: var(--cyan-light); }
+  .stat-icon.green { background: var(--success-bg); }
+  .stat-icon.warn { background: var(--warn-bg); }
+  .stat-icon.purple { background: var(--purple-bg); }
+  .stat-trend { font-size: 11px; color: var(--success); font-weight: 600; }
+  .stat-value { font-size: 28px; font-weight: 800; color: var(--text); }
+  .stat-label { font-size: 12px; color: var(--text2); }
+
+  /* CARDS */
+  .card {
+    background: var(--surface); border-radius: var(--radius); padding: 24px;
+    border: 1.5px solid var(--border); box-shadow: var(--shadow-sm); margin-bottom: 20px;
+  }
+  .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .card-title { font-size: 15px; font-weight: 700; }
+  .card-subtitle { font-size: 12px; color: var(--text2); margin-top: 2px; }
+
+  /* TABLE */
+  .table-wrap { overflow-x: auto; border-radius: var(--radius-sm); border: 1px solid var(--border2); }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    background: var(--surface2); padding: 11px 16px;
+    text-align: left; font-size: 11px; font-weight: 700;
+    color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border2);
+  }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.15s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--surface2); }
+  tbody td { padding: 12px 16px; font-size: 13px; vertical-align: middle; }
+
+  /* BADGES */
+  .badge-pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 4px 10px; border-radius: 50px; font-size: 11px; font-weight: 600;
+  }
+  .badge-success { background: var(--success-bg); color: #065F46; }
+  .badge-warn { background: var(--warn-bg); color: #92400E; }
+  .badge-danger { background: var(--danger-bg); color: #991B1B; }
+  .badge-blue { background: var(--blue-bg); color: #1E40AF; }
+  .badge-purple { background: var(--purple-bg); color: #5B21B6; }
+  .badge-cyan { background: var(--cyan-light); color: var(--cyan-dark); }
+  .badge-gray { background: #F1F5F9; color: #64748B; }
+
+  /* ACTIVITY CARDS (teacher) */
+  .activity-list { display: flex; flex-direction: column; gap: 12px; }
+  .activity-item {
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: var(--radius); padding: 18px 20px;
+    display: flex; align-items: center; gap: 16px;
+    transition: all 0.2s;
+  }
+  .activity-item:hover { border-color: var(--cyan); box-shadow: var(--shadow); }
+  .activity-item.done { opacity: 0.6; }
+  .activity-icon {
+    width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 22px;
+  }
+  .activity-body { flex: 1; min-width: 0; }
+  .activity-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .activity-meta { font-size: 12px; color: var(--text2); display: flex; gap: 14px; flex-wrap: wrap; }
+  .activity-meta span { display: flex; align-items: center; gap: 4px; }
+  .activity-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+
+  /* CONFIRM CHECK BTN */
+  .check-btn {
+    width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--border2);
+    background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-size: 16px; transition: all 0.2s;
+  }
+  .check-btn:hover { border-color: var(--success); background: var(--success-bg); }
+  .check-btn.checked { border-color: var(--success); background: var(--success); color: #fff; }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.35);
+    display: none; align-items: center; justify-content: center;
+    z-index: 1000; backdrop-filter: blur(3px);
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface); border-radius: var(--radius-lg);
+    padding: 32px; width: 500px; max-width: 95vw; max-height: 90vh;
+    overflow-y: auto; box-shadow: var(--shadow-lg);
+    animation: modalIn 0.22s ease;
+  }
+  @keyframes modalIn { from { opacity: 0; transform: scale(0.96) translateY(8px); } to { opacity: 1; transform: none; } }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+  .modal-title { font-size: 18px; font-weight: 700; }
+  .modal-close {
+    width: 32px; height: 32px; border-radius: 8px; border: none;
+    background: var(--surface2); cursor: pointer; font-size: 18px; color: var(--text2);
+    display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+  }
+  .modal-close:hover { background: var(--danger-bg); color: var(--danger); }
+  .modal-footer { display: flex; gap: 10px; margin-top: 24px; justify-content: flex-end; }
+  .modal-footer .btn { width: auto; }
+
+  /* NOTIFICATION */
+  .toast {
+    position: fixed; bottom: 28px; right: 28px; z-index: 9999;
+    background: var(--text); color: #fff; padding: 14px 20px;
+    border-radius: var(--radius-sm); font-size: 13px; font-weight: 500;
+    box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 8px;
+    transform: translateY(80px); opacity: 0; transition: all 0.3s ease;
+    max-width: 340px;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.success { background: #065F46; }
+  .toast.error { background: #991B1B; }
+
+  /* GRID LAYOUTS */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+  /* PROGRESS BAR */
+  .progress-bar { background: var(--border2); border-radius: 50px; height: 8px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 50px; background: linear-gradient(90deg, var(--cyan), var(--cyan-dark)); transition: width 0.5s ease; }
+
+  /* EMPTY STATE */
+  .empty-state {
+    text-align: center; padding: 48px 20px; color: var(--text2);
+  }
+  .empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.5; }
+  .empty-state p { font-size: 14px; }
+
+  /* SEGMENT TAGS */
+  .seg-tag {
+    display: inline-flex; padding: 3px 8px; border-radius: 4px;
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;
+    margin-right: 3px;
+  }
+  .seg-fi { background: #DBEAFE; color: #1E40AF; }
+  .seg-fii { background: #FEF3C7; color: #92400E; }
+  .seg-em { background: #F3E8FF; color: #6B21A8; }
+
+  /* SEARCH */
+  .search-input {
+    position: relative; display: inline-flex; align-items: center;
+  }
+  .search-input input {
+    padding: 9px 12px 9px 36px; border: 1.5px solid var(--border2);
+    border-radius: var(--radius-sm); font-size: 13px; background: var(--surface);
+    color: var(--text); outline: none; width: 220px; font-family: inherit;
+    transition: border-color 0.2s;
+  }
+  .search-input input:focus { border-color: var(--cyan); }
+  .search-input .search-icon {
+    position: absolute; left: 10px; font-size: 14px; color: var(--text3);
+    pointer-events: none;
+  }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 50px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--cyan); }
+
+  /* NOVOS BADGES DE STATUS */
+  .badge-orange { background: #FFF7ED; color: #C2410C; }
+  .badge-indigo { background: #EEF2FF; color: #3730A3; }
+  .badge-red    { background: var(--danger-bg); color: #991B1B; }
+  .badge-approved { background: #ECFDF5; color: #065F46; }
+
+  /* UPLOAD AREA */
+  .upload-area {
+    border: 2px dashed var(--border2);
+    border-radius: var(--radius);
+    padding: 32px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--surface2);
+    position: relative;
+  }
+  .upload-area:hover, .upload-area.drag-over {
+    border-color: var(--cyan);
+    background: var(--cyan-xlight);
+  }
+  .upload-area input[type=file] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+  .upload-area .upload-icon { font-size: 36px; margin-bottom: 10px; }
+  .upload-area p { color: var(--text2); font-size: 13px; }
+  .upload-area strong { color: var(--cyan-dark); }
+
+  .preview-wrap {
+    margin-top: 14px; border-radius: var(--radius-sm);
+    overflow: hidden; border: 1.5px solid var(--border);
+    max-height: 260px; display: none; position: relative;
+  }
+  .preview-wrap img { width: 100%; max-height: 260px; object-fit: contain; background: #f8f8f8; display: block; }
+  .preview-remove {
+    position: absolute; top: 8px; right: 8px;
+    background: rgba(0,0,0,0.55); color: #fff;
+    border: none; border-radius: 50%; width: 28px; height: 28px;
+    font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
+
+  /* COMPROVANTE VIEWER (coord) */
+  .comp-img-wrap { border-radius: var(--radius-sm); overflow: hidden; border: 1.5px solid var(--border); margin-bottom: 16px; }
+  .comp-img-wrap img { width: 100%; max-height: 400px; object-fit: contain; background: #f8f8f8; display: block; }
+
+  /* HOURS TOTAL BOX */
+  .hours-hero {
+    background: linear-gradient(135deg, var(--cyan-dark) 0%, var(--cyan) 100%);
+    border-radius: var(--radius); padding: 24px 28px;
+    color: #fff; display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 24px; box-shadow: 0 6px 24px rgba(45,212,191,0.3);
+  }
+  .hours-hero h2 { font-size: 13px; font-weight: 600; opacity: 0.85; margin-bottom: 4px; }
+  .hours-hero .big-num { font-size: 48px; font-weight: 900; letter-spacing: -2px; }
+  .hours-hero .big-num span { font-size: 20px; font-weight: 600; opacity: 0.8; }
+  .hours-hero .hero-icon { font-size: 64px; opacity: 0.25; }
+
+  /* TIMELINE */
+  .timeline { display: flex; flex-direction: column; gap: 0; }
+  .timeline-item { display: flex; gap: 16px; padding-bottom: 20px; position: relative; }
+  .timeline-item:last-child { padding-bottom: 0; }
+  .timeline-dot {
+    width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+    margin-top: 4px; position: relative; z-index: 1;
+  }
+  .timeline-dot.done { background: var(--success); }
+  .timeline-dot.pending { background: var(--warn); }
+  .timeline-dot.future { background: var(--border2); }
+  .timeline-line {
+    position: absolute; left: 4px; top: 14px; bottom: 0; width: 2px;
+    background: var(--border); z-index: 0;
+  }
+  .timeline-content { flex: 1; padding-top: 0; }
+  .timeline-content strong { font-size: 13px; display: block; margin-bottom: 2px; }
+  .timeline-content span { font-size: 12px; color: var(--text2); }
+
+  /* RESPONSIVE tweaks */
+  @media (max-width: 768px) {
+    .sidebar { transform: translateX(-100%); }
+    .main-content { margin-left: 0; }
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* PAYROLL REPORT */
+  .payroll-teacher-block {
+    margin-bottom: 24px; padding: 24px;
+    border: 1.5px solid var(--border); border-radius: var(--radius);
+    background: var(--surface);
+  }
+  .payroll-teacher-header {
+    display: flex; align-items: center; gap: 14px; margin-bottom: 16px;
+    padding-bottom: 14px; border-bottom: 1px solid var(--border);
+  }
+  .payroll-total-box {
+    background: linear-gradient(135deg, var(--cyan-dark), var(--cyan));
+    color: #fff; border-radius: var(--radius-sm); padding: 12px 20px;
+    margin-left: auto; text-align: right; min-width: 140px;
+  }
+  .payroll-total-box .val { font-size: 22px; font-weight: 800; }
+  .payroll-total-box .lbl { font-size: 11px; opacity: 0.85; }
+
+  /* activity checkbox rows */
+  .act-check-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px; border-radius: var(--radius-sm);
+    border: 1.5px solid var(--border2); margin-bottom: 8px;
+    cursor: pointer; transition: all 0.15s; background: var(--surface);
+  }
+  .act-check-row:hover { border-color: var(--cyan); background: var(--cyan-xlight); }
+  .act-check-row.selected { border-color: var(--cyan); background: var(--cyan-xlight); }
+  .act-check-row input[type=checkbox] { width:16px; height:16px; accent-color: var(--cyan-dark); cursor:pointer; flex-shrink:0; }
+  .act-check-row .act-info { flex:1; min-width:0; }
+  .act-check-row .act-info strong { font-size:13px; display:block; }
+  .act-check-row .act-info span { font-size:11px; color:var(--text2); }
+  .act-check-row .act-val { font-size:13px; font-weight:700; color:var(--cyan-dark); white-space:nowrap; }
+
+  /* no-rate warning */
+  .rate-warning { background:var(--warn-bg); border:1px solid #FDE68A; border-radius:var(--radius-sm); padding:10px 14px; font-size:13px; color:#92400E; margin-bottom:16px; }
+
+  /* print */
+  @media print {
+    body * { visibility: hidden; }
+    #print-area, #print-area * { visibility: visible; }
+    #print-area { position: fixed; inset: 0; padding: 32px; background: #fff; }
+    .no-print { display: none !important; }
+  }
+
+  /* ═══════════════════════════════════
+     PWA / MOBILE IMPROVEMENTS
+  ═══════════════════════════════════ */
+  
+  /* Safe area for notch/home indicator */
+  body {
+    padding-env: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    overscroll-behavior: none;
+  }
+
+  /* Prevent zoom on input focus (iOS) */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+  .btn { font-size: 15px !important; }
+
+  /* Mobile: sidebar vira bottom nav */
+  @media (max-width: 768px) {
+    #app-teacher, #app-coord {
+      flex-direction: column;
+    }
+    .sidebar {
+      width: 100%;
+      min-height: unset;
+      height: auto;
+      position: fixed;
+      top: auto;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      flex-direction: row;
+      align-items: center;
+      border-right: none;
+      border-top: 1.5px solid var(--border);
+      z-index: 200;
+      padding: 0;
+      padding-bottom: env(safe-area-inset-bottom);
+      box-shadow: 0 -4px 16px rgba(0,0,0,0.08);
+    }
+    .sidebar-logo, .sidebar-user, .sidebar-footer {
+      display: none !important;
+    }
+    .sidebar-nav {
+      flex: 1;
+      overflow: hidden;
+    }
+    .nav-section {
+      display: flex;
+      flex-direction: row;
+      padding: 0;
+      gap: 0;
+    }
+    .nav-label { display: none; }
+    .nav-item {
+      flex: 1;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 3px;
+      padding: 8px 4px 10px;
+      border-radius: 0;
+      border-bottom: none;
+      font-size: 10px;
+      text-align: center;
+      min-height: 56px;
+    }
+    .nav-item .nav-icon {
+      font-size: 20px;
+      margin: 0;
+    }
+    .nav-item.active {
+      background: var(--cyan-xlight);
+      color: var(--cyan-dark);
+      border-top: 2px solid var(--cyan);
+    }
+    .nav-badge {
+      position: absolute;
+      top: 6px;
+      right: 50%;
+      transform: translateX(60%);
+      font-size: 9px;
+      padding: 1px 5px;
+    }
+    .main-content {
+      margin-left: 0 !important;
+      padding-bottom: calc(72px + env(safe-area-inset-bottom));
+    }
+    .topbar {
+      padding: 14px 16px 10px;
+      padding-top: calc(14px + env(safe-area-inset-top));
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+    }
+    .content-area {
+      padding: 12px 14px;
+    }
+    .landing-cards {
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      padding: 0 16px;
+    }
+    .access-card {
+      width: 100%;
+      max-width: 360px;
+      padding: 28px 24px;
+    }
+    .login-box {
+      padding: 32px 20px;
+      border-radius: var(--radius);
+      margin: 16px;
+      width: calc(100% - 32px);
+    }
+    .modal {
+      border-radius: var(--radius) var(--radius) 0 0;
+      max-height: 92vh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .modal-overlay {
+      align-items: flex-end;
+    }
+    /* Larger touch targets */
+    .btn { min-height: 48px; }
+    .btn-sm { min-height: 38px; }
+    .nav-item { position: relative; }
+    /* Better table on mobile */
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table { min-width: 500px; }
+    /* Stats grid 2 cols on mobile */
+    .stats-grid { grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
+    .grid-2 { grid-template-columns: 1fr !important; }
+    /* Hours hero */
+    .hours-hero { flex-direction: column; gap: 8px; }
+    .big-num { font-size: 48px !important; }
+  }
+
+  /* PWA Install Banner */
+  #pwa-install-banner {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--surface);
+    border-top: 1.5px solid var(--border);
+    padding: 14px 16px;
+    padding-bottom: calc(14px + env(safe-area-inset-bottom));
+    z-index: 9999;
+    box-shadow: 0 -4px 16px rgba(0,0,0,0.12);
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+  }
+  #pwa-install-banner.show { display: flex; }
+  #pwa-install-banner .banner-icon { font-size: 28px; flex-shrink: 0; }
+  #pwa-install-banner .banner-text { flex: 1; }
+  #pwa-install-banner .banner-text strong { display: block; font-size: 14px; }
+  #pwa-install-banner .banner-text span { font-size: 12px; color: var(--text2); }
+  #pwa-install-banner .banner-btns { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
+  #pwa-install-banner .btn-install {
+    background: var(--cyan); color: #fff;
+    border: none; border-radius: 8px;
+    padding: 8px 16px; font-size: 13px; font-weight: 600;
+    cursor: pointer; white-space: nowrap;
+  }
+  #pwa-install-banner .btn-later {
+    background: transparent; border: none;
+    color: var(--text3); font-size: 12px; cursor: pointer;
+    padding: 4px 8px;
+  }
+
+  /* Offline indicator */
+  #offline-bar {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: #F87171;
+    color: #fff;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px;
+    z-index: 10000;
+  }
+  #offline-bar.show { display: block; }
+
+  /* Update available toast */
+  #sw-update-toast {
+    display: none;
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--text);
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 50px;
+    font-size: 13px;
+    z-index: 9998;
+    cursor: pointer;
+    white-space: nowrap;
+    box-shadow: var(--shadow-lg);
+  }
+  #sw-update-toast.show { display: flex; align-items: center; gap: 8px; }
+
+
+  .nav-label-text { display: inline; }
+  @media (max-width: 768px) {
+    .nav-label-text {
+      display: block;
+      font-size: 9px;
+      line-height: 1.2;
+      margin-top: 2px;
+      max-width: 60px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════ LANDING ══════════ -->
+<!-- Offline Indicator -->
+<div id="offline-bar">📡 Sem conexão — você está offline</div>
+
+<!-- PWA Install Banner -->
+<div id="pwa-install-banner">
+  <div class="banner-icon">⏱️</div>
+  <div class="banner-text">
+    <strong>Instalar Banco de Horas</strong>
+    <span>Adicione à tela inicial para acesso rápido</span>
+  </div>
+  <div class="banner-btns">
+    <button class="btn-install" onclick="pwaInstall()">Instalar</button>
+    <button class="btn-later" onclick="pwaDismiss()">Agora não</button>
+  </div>
+</div>
+
+<!-- SW Update -->
+<div id="sw-update-toast" onclick="swApplyUpdate()">
+  🔄 Nova versão disponível — toque para atualizar
+</div>
+
+<div id="landing" class="page active">
+  <div class="landing-logo">
+    <img src="data:image/png;base64,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" style="height:52px;object-fit:contain;"><h1 style="display:none;">Banco de Horas</h1>
+  </div>
+  <p class="landing-subtitle">Gestão de Horas Extras — Arena</p>
+  <div class="landing-cards">
+    <div class="access-card teacher" onclick="showPage('login-teacher')">
+      <div class="card-icon">👨‍🏫</div>
+      <h2>Professor</h2>
+      <p>Acesse suas atividades, registre presença e acompanhe suas horas extras.</p>
+      <div class="card-btn">Entrar como Professor</div>
+    </div>
+    <div class="access-card coord" onclick="showPage('login-coord')">
+      <div class="card-icon">🏫</div>
+      <h2>Coordenação</h2>
+      <p>Gerencie professores, cadastre atividades e acompanhe o relatório geral.</p>
+      <div class="card-btn">Entrar como Coordenação</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ LOGIN PROFESSOR ══════════ -->
+<div id="login-teacher" class="page" style="flex-direction:column;">
+  <div class="login-box" style="margin:auto;">
+    <div class="login-back" onclick="showPage('landing')">← Voltar</div>
+    <div class="login-header">
+      <div class="badge badge-teacher">👨‍🏫 Acesso Professor</div>
+      <h2>Bem-vindo de volta!</h2>
+      <p>Entre com seu CPF e data de nascimento para acessar.</p>
+    </div>
+    <div id="teacher-error" class="error-msg">⚠️ CPF ou data de nascimento incorretos.</div>
+    <div class="form-group">
+      <label>CPF</label>
+      <input type="text" id="t-cpf" placeholder="000.000.000-00" oninput="maskCPF(this)" maxlength="14">
+    </div>
+    <div class="form-group">
+      <label>Data de Nascimento (senha)</label>
+      <input type="date" id="t-dob">
+    </div>
+    <button class="btn btn-primary" onclick="loginTeacher()">🔓 Entrar</button>
+  </div>
+</div>
+
+<!-- ══════════ LOGIN COORDENAÇÃO ══════════ -->
+<div id="login-coord" class="page" style="flex-direction:column;">
+  <div class="login-box" style="margin:auto;">
+    <div class="login-back" onclick="showPage('landing')">← Voltar</div>
+    <div class="login-header">
+      <div class="badge badge-coord">🏫 Acesso Coordenação</div>
+      <h2>Área Administrativa</h2>
+      <p>Entre com suas credenciais de coordenação.</p>
+    </div>
+    <div id="coord-error" class="error-msg">⚠️ Usuário ou senha incorretos.</div>
+    <div class="form-group">
+      <label>Usuário</label>
+      <input type="text" id="c-user" placeholder="">
+    </div>
+    <div class="form-group">
+      <label>Senha</label>
+      <input type="password" id="c-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')loginCoord()">
+    </div>
+    <button class="btn btn-purple" onclick="loginCoord()">🔓 Entrar</button>
+  </div>
+</div>
+
+<!-- ══════════ APP PROFESSOR ══════════ -->
+<div id="app-teacher" class="page">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <img src="data:image/png;base64,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" style="height:44px;object-fit:contain;">
+      <div style="line-height:1.2;"><span>Banco de Horas</span><small>Professor</small></div>
+    </div>
+    <div class="sidebar-user">
+      <div class="user-avatar" id="t-avatar">--</div>
+      <div class="user-info">
+        <strong id="t-sidebar-name">--</strong>
+        <span id="t-sidebar-seg">--</span>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <span class="nav-label">Menu</span>
+        <div class="nav-item active" onclick="teacherNav('dashboard',this)">
+          <span class="nav-icon">📊</span> Dashboard
+        </div>
+        <div class="nav-item" onclick="teacherNav('atividades',this)">
+          <span class="nav-icon">📋</span> Minhas Atividades
+          <span class="nav-badge" id="t-pending-badge">0</span>
+        </div>
+        <div class="nav-item" onclick="teacherNav('historico',this)">
+          <span class="nav-icon">🕐</span> Histórico
+        </div>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="logout-btn" onclick="logout()">🚪 Sair</div>
+    </div>
+  </aside>
+  <!-- Main -->
+  <div class="main-content">
+    <div class="topbar">
+      <h1 id="t-page-title">Dashboard</h1>
+      <div class="topbar-right">
+        <span class="topbar-date" id="t-date"></span>
+      </div>
+    </div>
+    <div class="content-area">
+      <!-- DASHBOARD PANEL -->
+      <div class="panel active" id="t-panel-dashboard">
+        <div class="hours-hero">
+          <div>
+            <h2>Total de Horas Extras Acumuladas</h2>
+            <div class="big-num" id="t-total-hours">0 <span>hrs</span></div>
+          </div>
+          <div class="hero-icon">⏱️</div>
+        </div>
+        <div class="stats-grid" id="t-stats-grid"></div>
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">Próximas Atividades</div><div class="card-subtitle">Confirme sua presença</div></div>
+          </div>
+          <div class="activity-list" id="t-upcoming-list"></div>
+        </div>
+      </div>
+
+      <!-- ATIVIDADES PANEL -->
+      <div class="panel" id="t-panel-atividades">
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">Todas as Minhas Atividades</div></div>
+            <div style="display:flex;gap:10px;align-items:center;">
+              <select id="t-filter-status" class="form-group" style="margin:0;padding:8px 12px;border:1.5px solid var(--border2);border-radius:var(--radius-sm);font-size:13px;outline:none;" onchange="renderTeacherActivities()">
+                <option value="">Todos os status</option>
+                <option value="pendente">⏳ Pendente</option>
+                <option value="aguardando_comprovante">📎 Aguard. Comprovante</option>
+                <option value="em_analise">🔍 Em Análise</option>
+                <option value="aprovado">✅ Aprovado</option>
+                <option value="reprovado">❌ Reprovado</option>
+              </select>
+            </div>
+          </div>
+          <div class="activity-list" id="t-all-activities"></div>
+        </div>
+      </div>
+
+      <!-- HISTÓRICO PANEL -->
+      <div class="panel" id="t-panel-historico">
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">Histórico de Horas Extras</div></div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Atividade</th><th>Data</th><th>Horas</th><th>Tipo</th><th>Status</th></tr></thead>
+              <tbody id="t-history-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ APP COORDENAÇÃO ══════════ -->
+<div id="app-coord" class="page">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <img src="data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCAB1AUkDASIAAhEBAxEB/8QAHQABAAICAwEBAAAAAAAAAAAAAAcIBgkBBAUCA//EAEwQAAEEAQICBgYFBwgIBwAAAAEAAgMEBQYRByEIEhMxQVEiMmFxgZEUFSOhsTRCUnJzdLIWMzY3YpKTwRckNVV1gsLRGCVDY2Si0v/EABsBAQEBAQADAQAAAAAAAAAAAAACAwEEBQYH/8QAKREAAgIBBAIBAgcBAAAAAAAAAAECEQMEEiExBUFRIjIGExQjQrHR4f/aAAwDAQACEQMRAD8AuWiIgCIiAIiE7DdAFw5zWjdxDQPEnZQ1xj49YPRskuJwzGZbMt3Dmtd9lCf7TvP2KsOreKmvdT2Xy39Q24Y3HlDVeYmNHls3vVKLZLkkbAY5oZDtHKx58muBX3vzWuHH6t1Vj7DZ6epMrFIDvuLT9viN1M/C7pJZnGTxUdax/WNIkN+lxNAljHmR4/NHBnFNMtui83TmcxWosTDlcNdit1Jm7tkYd/gfIr0lJYREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBEXBOyA5JABJIGyrJ0j+OD4pLGkNHWy2RpLLt6M+r4FjD5+Z9i9/pScWHaboP0jgJwMtbZ/rMzTzrxnw/WP4FVEJJJJJcTzJPMkq4x9kSl6BJLi5zi5zjuSTzJXCIrMgiIugzjhDxKzfDrNtsUnunxsrgLVNx9Fw8XDyd7VebRupMTqzT9bN4ay2erO3fkebD4tPkQtcKkrgHxNtcPdTNZYkfJg7jw23Fvv1PJ49o5/NRKNlwlXBe5F+FC3WvUoblSZk1eZgfHIw7hwPiF+6zNQiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAsM4xa4p6C0XazExa6y5pjqReL5D3fLvWYyOaxhe5wa1o3JJ5AKjHSQ1+/W+u5YasrjicaTDWaDye4es/377hdSsmTpEd5jJXcxlbOVyMzprdqQySvcfEnu9wXURFqYhERAEREAREQFmOiFxKLXfyCzNjcH0sbI8/OP8NverQBazsfctY6/XyFKV0VqtIJYntOxa4HcK/3BvWtbXehqWZic0WQ3srUYPNkgHP58j8VnJUawd8GZoi/G9YiqU5rUzg2OFhe4k+AG6ks6GptRYbTWMfkc5kIKVZv50jti4+QHifcoczfSe0ZTsOjx2OyGSa0+u0dmD/eCrjxi4gX9fautXrNo/V8UjmUq/W9BjAeR28yvD0tprPaptmpp7Fz35G+t2Y9FnvPcFaivZm5u6RZqDpVade/abS+Sib59u134BZzovjpw/wBTWGVI8maFp52bHbaYwT5dY8lU/LcIuI+MqutWtMWTE0buMTmvI+AO6weRhbIWPa5kjDsQRs5pH4Fd2p9Dc12bNmOD2hzSHNI3BB3BC5Kr70PNd5DO4i7pfKzvsS41ofWled3dkdhsT47ErzOkvxquYy/No7SVgRTsHVvXG8yw/oN9vfuormit3Fk3ap19pDTHWbms/SryN74u0DpB/wAo5rCLPSK4bMsNghvW7Bc8MBbWfsSfgqUWpZrc7p7U0liVx3c+VxcSfeV9UC0ZCqNwPtmfir2E7zZdXnbPWisR+pKwPbv5EbqOtfca9CaQnfUtZL6bdbyMFUdpsfIkbgFR10lOKNzTun8bo7AWOxv2qUb7czD6UUZaPRHkT+BVV3EueXuLnvcebid3OPv8VKjZ2Uq6LXSdKrTzZeqzS2Sezf1u3aPu2WSaU6RugczO2vcks4mV3IfSGEs39rgNgqp43h7rjI0fp1PTGQkr7dbrmMt3HsB5lY9fp2qVp9O/VlrTsOz4pWFrh8Cq2onc/ZsrpXK16pHbpWIrFeQbskieHNcPYQv3J2G6pH0cuKV/Rup62GyNqSXA3ZBE9j3biB5OwcN+4eatLxk1xDofh/bzzC2SdzQyo39J7uQPuG+6hqmaKVo9jV+sdN6Spm1n8tWpt23axzh13e5veVEeY6UOjqs7o8fisjkWg7B4+zB/vBVR1DmsrqLKS5PNXZblqVxc4yOJDfYB3ALv6W0dqnVHWOAwtm8xvJz2t2YP+Y8lexLsje/RZ7EdKHR9qZrMhicjj2n88/aAf3Qpc0frPTWran0nAZatcG27o2u2kb7294VA9VaQ1Ppd7W6gw1miH+q9zd2H2dYcl09O5rK6dysOUwt2WnahcHNcx2wd7CO4hccV6Cm/ZsnB3WM6615pfRVUT6gykNZzhuyEHrSu9zRzWK4fivTs8D36/laxs0Fctli35CfuDfiSPmqUao1DkNT5uxmsxcNi1YeX+m/cMHg0DwAC4o2VKVFp8j0pdKwyltLA5K4wdz+uI9/gQvil0p9MSyAWtPZKs3xd2jX7fIKt+ktB6v1ZCZ9P4OxbgB2MvJrN/YT3rs6l4a6705Udcy2nbUNdg3fKzZ4aPb1d9lW1EbpF0tB8V9E6zkbXxGXjbbcOVacdm8nyAPf8FnK1lVppqtiOzVlfBPG7rMkjds5p9hV7OjnrWzrfhxWu5BwdfqPNaw79NwAO/wAiFMo0VGVkkoiKSwiIdgNz3ICI+lHrn+SXD6SlTm6uRyu9eHY82sPru+RVIxv4ncnmT5lSP0jdYnV/Ey5LDL1qOP8A9VrbdxA73fHf7lj+k9C6i1JCbVWsyrQafTuWj1Ih/mfktYqkYTklyzGEUp19BaIoDq5bU93IzjvZQgHZ+7rEg/cu23BcLQ3q/VOccP0jYO/y6y3WDI+VE9dPy2jg6eREQhFK8+jeHVwEU8xmcXIfVE0LZGD3ku3+5eDm+GGdq1n3cNYqZ+kwbufTfu9g/tNIH3bqJY5x+5G+HW6fPxjmmYMi5cHNe5j2uY9p2LXDYhcKDyQiIgCmTon63OmtfDCW5erj8v8AZ8zyZL+afidgobX3Xnmq2IrVdxZNC8SRuHeHA7j70atHU6Zs1HcvytwQ2qslexGJIpGlr2nuIPgsX4R6oi1fw+xWajcHSSQhkw35h7fRO/v23+KyTK3q2MxtjIXJBHXrxmSRx8AFibmJ/wCi7h81pJ0vjw0eJZyXNG7w60NBLXqXMPiWPPXkbG8bu9+3NVR4scbtU6wyM9fF3ZsVhWuLYYoHFr5G+bnDnz8lGFapdylvs4K1i9Yce5rS9x+KtRfsz3r0Xa1Px/4c4es59bLHKTgHqw1mHcny3cAFTDVGTbmtR5DLtgbXbbndKIm9zQSsz0vwT4jZ2WMR4B9CF5H21shjQPPlusO1bhJ9OalvYK1KyWem8Rvez1SdgeXzVRSXRMm32SX0YMt9RZXVOWLiBWwz3jn49ZoH3lRLctz37k9+1IZJ7Mhlkce8ucdysv4cyuh07rNzTzOKA7//AHWLChyaPcurs4+iX+jtwii4hz2cnl55IcPUeGdWPk6d/iN/AD/NWPp8C+GVNsZbp8OMZDg587ydx8V43Q9jY3g3A9rQHPuzFx8/VUuZPr/V1ns/X7J3V9+yzbdmsUqNefE/KvzXEDM33Elv0gxRgnfqsZ6AH/1WZdF/T+EzfEQ2tQS1W08dD27Y7Dw1skm4AHPv79/go0zPW+ur/X9b6VLv/fK+KdO7ccW0q1idzRu4QtLiB8FdcGafJsbZnsAxgazM41rWjYAWGAAfNQD0wsRpvJaZq6mx1ug/J1p2xSdhK0uljd57Hntt96rX9SZ7/dOS/wAJyHCZ49+IyJ98LlKjTKcrXR5rt+qSCQfA+RU5cd9TWM7wZ4fPlk6zp2PdL+s0Fo3+DQoe+os5/ua//gFZvxAgs1uDuhYLcMsErZZt2SN2IGzvBU+SVaTI6hYJJ4oidg+RrD7iQFsU4c4ehg9E4ihja7IIW1I3HqjbrOLQST5kla7qn5bW/bs/iC2RaX/o1jP3SL+AKZlQPP4iafpal0dksVfrsmZLA7qdYbljtuRHkVrpc3qvez9Fxb8itmGR/wBn2f2TvwK1oz/lE37V34lIDIWa6HdalntEag09l6rLlEXGymKQbtJ2b/2UyTcMeHcMRkm03jY2Dvc9oAHxKr70Y9WUdE6A1dqK/wCkyvI0Rxjvkedg1o+JCjXiBxR1jrW5LLkcrPXpuPoU67yyNrfAED1vilWwpJIug3VnDvSOObQizWKx9WDcCKJwIb8G7qPOJ/SB0NDp+9jsLIc3anidG1rYyIuY73dbbkqlYjB5XNWOzxeKtXpSdvs49/vUi6c4C8QspE+xbx8eJrsYXudads7YDwA35ptSG5voi0ePvJVuehD/AFe5f/ijv4GKpErezlfHvuWOLd/crb9CL+r3Lf8AFHfwMXZ9Ew7J/REWZsFg3HTVH8keGWWyjH9Sw6Iw1zv/AOo4EBZyoB6T1qHK57C6eskux1IOv32A/wA5tt2bPjs5VGLk6RnlyRxwc5dIgrQ+l6NGlFqbVUBsusEyUcc47dsSd+0k/sb+HjsV7eazF/LyNNub7KMbRV2DqxRDya3wX4ZK7NkLr7U5HWdya0dzWjuA9i6y95gwRxq/Z+beT8rk1k2k6iul/oREXkHqQv1qWLFOw2zUnkrzMO7ZI3bOHxX5L6jY+SRscbHPe47Na0bkn2IzsbT+ns9DMwYXWMXZZpkWPy+20OTibs158BKPH9bf4KLdRYbIYDKyY3Jw9nMzmHDm2Rp7nNPiCFPmm+E2sc1G2Z1JtCF351g9V236qyrK8BcjltMyY3J5WvNPCwuoyiPZ0T+/q7782n/Neq1McSdxfPwfdeGz65rZng9vplSUXdzuKv4PMWsRlIHQXKryyVhHiPEew+C6S8Q+gCIiAsn0J9U9ncyukLEmzZB9KrA+fIED7ypc6S9uarwYzxh33kiDCR4AuCpvwp1DLpbiHh81G7qtjsCOT2sf6J/FXq4iYSPWPD3J4iF4Iv1d4X+3k5vz2USVM1i7Rrt7m8vAK8fRf0/hcZwsxWRo14TcuxdrYnDR1y4+BPkPJUlyVC5isjYxmQhdBbrPMcsbhsQQsv0DxV1roik6jhMgz6GXFwrzs67Wk95HMbKpK1wRF0y/GTvVcbQnv3Z2w1q7DJI9x2AaBuVrs1/mGZ/W+YzMX81asucz2tHIH5BexrnijrfWdc1c3l3fRCdzWgb1Iz7xud1iFKtYu3IqVKB9izM4MiiYN3OJ7hskY0dlK+jOeHFN8mgde3+r6EOPYzre0yRnZYAPVVor3D6TQPRc1BFeaPrTIRsntj9A9YbN+A71V7w+CJ2ckqout0QP6ma377N/0qYXAEbEbg8lD3RA/qZrfvs3/SpiKzfZqujXZxRw8uB4iZzFzMLDHbc4bjvDvS/zWb9FLVlTTHEvsMhM2GtlIPo3aOOzWv3BG/y2+KlLpZ8LreZYzWmArOmt14+pdhYPSkYPzx5kfgFVEHnuCQQfcQVouUZtbWbN2ncbg7jzCxLibxE05w+xbLudsP68rurDBEOtJIfYPJUrxPFjiLiqEdGlqm62vGOqxrnb9UeQWM5/N5fP5B2QzWRsX7Lu+SZ25UqB3fwWud0pNDtaScZmuX/xx/3WD9L/AC0edwujMxFBNXjtsfI2OZuz2gg7bhYDwH4Z5HX+poJpIHswVWQPtTuGzX7H1G+ZKkvpuQx1maVrwt6sUQexgHgA0gLtJMNtx5K41Py2t+3Z/EFsi0v/AEaxn7pF/AFrdqfltb9uz+ILZFpf+jWM/dIv4AuTEDtZL/Z9n9k78CtaM/5RP+1d+JWy7IgnH2ABueyd+BWtKyC21O1wIIlcCD4cykBkPchsSs4dWKzXERS5Hd7fPZrSF4lONk16tDK7qxyTMY93k0uAJ+RUj8PtI2tV8ItTnHxGW9jrLbEbGjcub6PWA+AKjM77lrgWuB2cD3g+SshmxrQmDxOA0xQpYarBBXFdh3jaB2h6o9InxJ711OKupKOldCZPLXpWsDYHNjaTzkeRyaPaqdaX448Q9O4iLFVMlBPWhaGRfSYi9zAO4A7jksX1trbU+srbbGospLa6h+ziHKNnuao2M03qjHSS5znu73OLj8Srg9CqrJDwzvWHtIbYyL3MJ8R1WhVT0lp7K6rz9bB4Ws+e1O4N5DlGPFzvIBbAeHGl6ujdG47T9XZwrRAPft67/Ers2TBc2ZEiIszUFVT4333WtfZMdbf02xH9Vm/V/Eq1ZVOeJcol4gZxzQQBbe3715uggpZLfo+d/Eud49JtX8nRjyIi9yfnwRF28RjrmXycGNx8LprM7g1jQPv9yNpK2djFyaUe2fvprB5LUWXixeKgM08h5n81g8yfAKzXDjhphdJ1mTPibcybm/aWJBv1T5NHgF3eGGiaOjsG2uwNlvSgOsz7c3O8h7Fl+y9LqtU8jqPR+g+I8JDSxWTKrn/RwByQjdc7IvDPoSDelJwtGqcI7U2Fr75qizeRjBzsRDvHvHJU559xBBHIg+C2buaHAgjcHkQVTrpUcL3aYzbtV4av/wCUXpCbDGDlBKfwB5+7ZXF+jOcfZBqIi0Mzh2/VOx2Pgfar79HnUDtR8JsNckf1poY/oz/PeP0R+CoSra9CK6ZdF5ii52/0e40tHkHAkqJ9FwfJI/EnhPo/Xg7XLUTDdA2bbrkNk+PgVEVzoqQGbenqqVsW/dLFudvgrMooTaNKRXDH9FbDskab+pLsrQfSEbQ3l8QVK/D3hVozRG0uGxjXW9tjan9OQ/HuHyWcIlsJJHha80xT1hpW7p3ISzRVrbQ174iA4bEHlv7lEP8A4XNFbbfWuY/xGf8A5U9ouW0GkzGOGmjMfoPS7NP4yeeasyV0odMQXbu237vcsnREOnDmhwIOxBGxB7ioo4g8BdD6stSX2V5cVfk5ulqENDz5kEH7lLCJYqyskvRTZ2w7HVbxF4h8W7lkelejJo/HTtnzN25lS07iNzg2M+8bb/ep4Rdtk7UdPE4uhiKEVDGVIalWIbMjibsAFhnFrhXhOJDqDsxbuQfQi4x9g4DfceO4Kz9FwogaPovaLZKyQZXL7seHD7RveDv+ipyoVmU6NepGSWQRtjaT3kAbBfuiN2cSoHmNlD2s+jzobUecmy/Wu4+ad3WlZWe0Mc7z2IOxUwpslhqzA+E/C/C8OYLsOItW7Dbjg6T6Q4Hbby2AXicRuA+idX2ZL7YJcXkJObpqpADz5uBB+7ZSui7bFIrG7opt7f0NVv7L2w+kvWw/RZ05DM1+UzuQtMHMsjLWg/MFWGRNzG1GN6J0PpnRtL6Lp7Fw1AR6cgG73+8rJERcOhERAcHvVSOMmMkxfEbKxvYWtnk7dhPiHK3BWAcXuH8Ossa2as5kOUrg9jIe54/RK8rSZlinb6Z6bzmhlrNNUPuXKKrIvUzens3hbj6uSxlmGRp29QkH2ghfWG01n8xO2HHYi1M53j1NgPiV7r8yNXZ+d/p8u7Ztd/FHlxtfJI2ONjnyPIa1rRuST4Ky/A/h+3TWNGWyUQOWtMB2I/mWH80e3zXV4R8J4tPyszGfEVnI7bxRAbsh9vtKlgDYr1er1W/6IdH2ng/CvB+/nX1el8f9A5LlEXrz6kIiIAvP1BiKGexFnE5Ss2xTssLJGOHeD/mvQRAUF408NMnw71C+GRkk+IncTTtbciP0XeRCwFbJdSYHE6ixMuLzNKK5UlGzmSN329o8j7VXLWnRcmNx8+ks3GyBx3Fe5v6HsDhuStFP5M3D4Kzq3XQoxU1XQmSyksZa29b+ycR3hoIP3rDtLdFvNSZGN2pc3UipNcC9lTdznjy5gbKz+ncPj8BhquIxddsFSswMjYPIeJ9q5KS9CMWuT0ERFBoEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERACFxsiID4mhimbtLGyQeThuvpkbI29SNoY3yaNkRDlLs+gEREOhERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQH/2Q==" style="height:44px;object-fit:contain;">
+      <div style="line-height:1.2;"><span>Banco de Horas</span><small>Coordenação</small></div>
+    </div>
+    <div class="sidebar-user">
+      <div class="user-avatar purple">👤</div>
+      <div class="user-info">
+        <strong>Coordenação</strong>
+        <span>Administrador</span>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <span class="nav-label">Menu</span>
+        <div class="nav-item active" onclick="coordNav('dashboard',this)">
+          <span class="nav-icon">📊</span> Dashboard Geral
+        </div>
+        <div class="nav-item" onclick="coordNav('professores',this)">
+          <span class="nav-icon">👥</span> Professores
+        </div>
+        <div class="nav-item" onclick="coordNav('atividades',this)">
+          <span class="nav-icon">📋</span> Atividades
+          <span class="nav-badge" id="c-analise-badge" style="display:none;background:#3730A3;">0</span>
+        </div>
+        <div class="nav-item" onclick="coordNav('relatorio',this)">
+          <span class="nav-icon">📈</span> Relatório
+        </div>
+        <div class="nav-item" onclick="coordNav('configuracoes',this)">
+          <span class="nav-icon">⚙️</span> Configurações
+        </div>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="logout-btn" onclick="logout()">🚪 Sair</div>
+    </div>
+  </aside>
+  <div class="main-content">
+    <div class="topbar">
+      <h1 id="c-page-title">Dashboard Geral</h1>
+      <div class="topbar-right">
+        <span class="topbar-date" id="c-date"></span>
+        
+      </div>
+    </div>
+    <div class="content-area">
+      <!-- DASHBOARD -->
+      <div class="panel active" id="c-panel-dashboard">
+        <div class="stats-grid" id="c-stats-grid"></div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Horas por Segmento</div></div>
+            <div id="c-seg-chart" style="padding:8px 0;"></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Atividades Recentes</div></div>
+            <div class="timeline" id="c-recent-timeline"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Top Professores por Horas Extras</div></div>
+          <div id="c-top-teachers"></div>
+        </div>
+      </div>
+
+      <!-- PROFESSORES -->
+      <div class="panel" id="c-panel-professores">
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">Professores Cadastrados</div></div>
+            <div style="display:flex;gap:10px;">
+              <div class="search-input">
+                <span class="search-icon">🔍</span>
+                <input type="text" placeholder="Buscar professor..." oninput="renderTeachersTable(this.value)">
+              </div>
+              <button class="btn btn-primary btn-sm" onclick="openAddTeacherModal()">+ Cadastrar Professor</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Nome</th><th>CPF</th><th>Segmento</th><th>Dt. Nascimento</th><th>Horas Extras</th><th>Ações</th></tr></thead>
+              <tbody id="c-teachers-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ATIVIDADES -->
+      <div class="panel" id="c-panel-atividades">
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">Atividades Cadastradas</div></div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+              <select id="c-filter-teacher" style="padding:8px 12px;border:1.5px solid var(--border2);border-radius:var(--radius-sm);font-size:13px;outline:none;" onchange="renderActivitiesTable()">
+                <option value="">Todos os professores</option>
+              </select>
+              <select id="c-filter-month" style="padding:8px 12px;border:1.5px solid var(--border2);border-radius:var(--radius-sm);font-size:13px;outline:none;" onchange="renderActivitiesTable()">
+                <option value="">Todos os meses</option>
+              </select>
+              <select id="c-filter-status-coord" style="padding:8px 12px;border:1.5px solid var(--border2);border-radius:var(--radius-sm);font-size:13px;outline:none;" onchange="renderActivitiesTable()">
+                <option value="">Todos os status</option>
+                <option value="em_analise">🔍 Em Análise</option>
+                <option value="pendente">⏳ Pendente</option>
+                <option value="aguardando_comprovante">📎 Aguard. Comprovante</option>
+                <option value="aprovado">✅ Aprovado</option>
+                <option value="reprovado">❌ Reprovado</option>
+              </select>
+              <button class="btn btn-primary btn-sm" onclick="openAddModal()">+ Nova Atividade</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Atividade</th><th>Tipo</th><th>Professor</th><th>Data</th><th>Horas</th><th>Status</th><th>Confirmação</th><th>Ações</th></tr></thead>
+              <tbody id="c-activities-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- RELATÓRIO -->
+      <div class="panel" id="c-panel-relatorio">
+        <!-- Step 1: selection -->
+        <div id="relatorio-step1">
+          <div class="stats-grid" id="c-report-stats"></div>
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">💰 Gerar Relatório de Pagamento</div>
+                <div class="card-subtitle">Selecione as atividades aprovadas que serão pagas neste mês</div>
+              </div>
+            </div>
+            <div id="payroll-selection-list"></div>
+          </div>
+        </div>
+        <!-- Step 2: generated report -->
+        <div id="relatorio-step2" style="display:none;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;" class="no-print">
+            <button class="btn btn-outline btn-sm" onclick="voltarSelecao()">← Voltar à Seleção</button>
+            <div style="display:flex;gap:10px;">
+              <button class="btn btn-primary btn-sm" onclick="window.print()" style="background:linear-gradient(135deg,#A78BFA,#7C3AED);">🖨️ Imprimir</button>
+            </div>
+          </div>
+          <div id="print-area">
+            <div id="relatorio-gerado"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONFIGURAÇÕES -->
+      <div class="panel" id="c-panel-configuracoes">
+        <!-- Mudar Senha -->
+        <div class="card" style="max-width:520px;">
+          <div class="card-header">
+            <div>
+              <div class="card-title">🔒 Alterar Senha</div>
+              <div class="card-subtitle">Atualize a senha de acesso da coordenação</div>
+            </div>
+          </div>
+          <div id="cfg-pass-msg" class="error-msg" style="display:none;"></div>
+          <div class="form-group">
+            <label>Senha Atual</label>
+            <input type="password" id="cfg-pass-current" placeholder="••••••••">
+          </div>
+          <div class="form-group">
+            <label>Nova Senha</label>
+            <input type="password" id="cfg-pass-new" placeholder="••••••••">
+          </div>
+          <div class="form-group">
+            <label>Confirmar Nova Senha</label>
+            <input type="password" id="cfg-pass-confirm" placeholder="••••••••">
+          </div>
+          <button class="btn btn-purple" style="width:auto;padding:12px 28px;" onclick="changePassword()">💾 Salvar Nova Senha</button>
+        </div>
+
+        <!-- Valor Hora Aula por Segmento -->
+        <div class="card" style="max-width:520px;">
+          <div class="card-header">
+            <div>
+              <div class="card-title">💵 Valor da Hora Aula por Segmento</div>
+              <div class="card-subtitle">Usado para calcular o pagamento no relatório ao Departamento Pessoal</div>
+            </div>
+          </div>
+          <div id="cfg-rates-msg" style="display:none;padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;margin-bottom:16px;"></div>
+          <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:20px;">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <span class="seg-tag seg-fi" style="font-size:12px;padding:5px 12px;min-width:100px;text-align:center;">Fundamental I</span>
+              <div style="flex:1;position:relative;">
+                <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text2);font-size:14px;font-weight:600;">R$</span>
+                <input type="number" id="cfg-rate-fi" min="0" step="0.01" placeholder="0,00"
+                  style="width:100%;padding:10px 12px 10px 36px;border:1.5px solid var(--border2);border-radius:var(--radius-sm);font-size:14px;outline:none;font-family:inherit;"
+                  onfocus="this.style.borderColor='var(--cyan)'" onblur="this.style.borderColor='var(--border2)'">
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <span class="seg-tag seg-fii" style="font-size:12px;padding:5px 12px;min-width:100px;text-align:center;">Fundamental II</span>
+              <div style="flex:1;position:relative;">
+                <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text2);font-size:14px;font-weight:600;">R$</span>
+                <input type="number" id="cfg-rate-fii" min="0" step="0.01" placeholder="0,00"
+                  style="width:100%;padding:10px 12px 10px 36px;border:1.5px solid var(--border2);border-radius:var(--radius-sm);font-size:14px;outline:none;font-family:inherit;"
+                  onfocus="this.style.borderColor='var(--cyan)'" onblur="this.style.borderColor='var(--border2)'">
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <span class="seg-tag seg-em" style="font-size:12px;padding:5px 12px;min-width:100px;text-align:center;">Ensino Médio</span>
+              <div style="flex:1;position:relative;">
+                <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text2);font-size:14px;font-weight:600;">R$</span>
+                <input type="number" id="cfg-rate-em" min="0" step="0.01" placeholder="0,00"
+                  style="width:100%;padding:10px 12px 10px 36px;border:1.5px solid var(--border2);border-radius:var(--radius-sm);font-size:14px;outline:none;font-family:inherit;"
+                  onfocus="this.style.borderColor='var(--cyan)'" onblur="this.style.borderColor='var(--border2)'">
+              </div>
+            </div>
+          </div>
+          <button class="btn btn-primary" style="width:auto;padding:12px 28px;" onclick="saveHourlyRates()">💾 Salvar Valores</button>
+        </div>
+
+        <!-- Tipos de Atividade -->
+        <div class="card" style="max-width:520px;">
+          <div class="card-header">
+            <div>
+              <div class="card-title">🏷️ Tipos de Atividade</div>
+              <div class="card-subtitle">Gerencie os tipos disponíveis no cadastro de atividades</div>
+            </div>
+          </div>
+          <div id="cfg-types-list" style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;"></div>
+          <div style="display:flex;gap:10px;align-items:flex-end;">
+            <div class="form-group" style="flex:1;margin:0;">
+              <label>Emoji</label>
+              <input type="text" id="cfg-type-emoji" placeholder="📌" maxlength="2" style="width:72px;">
+            </div>
+            <div class="form-group" style="flex:4;margin:0;">
+              <label>Nome do Tipo</label>
+              <input type="text" id="cfg-type-name" placeholder="Ex.: Conselho de Classe" onkeydown="if(event.key==='Enter')addActivityType()">
+            </div>
+            <button class="btn btn-primary btn-sm" style="margin-bottom:0;height:42px;" onclick="addActivityType()">+ Adicionar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ MODALS ══════════ -->
+<!-- Add Teacher -->
+<div class="modal-overlay" id="modal-teacher">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="m-t-modal-title">Cadastrar Professor</span>
+      <button class="modal-close" onclick="closeModal('modal-teacher')">×</button>
+    </div>
+    <input type="hidden" id="m-t-id" value="">
+    <div class="form-group">
+      <label>Nome Completo</label>
+      <input type="text" id="m-t-name" placeholder="Nome do professor">
+    </div>
+    <div class="grid-2">
+      <div class="form-group">
+        <label>CPF</label>
+        <input type="text" id="m-t-cpf" placeholder="000.000.000-00" oninput="maskCPF(this)" maxlength="14">
+      </div>
+      <div class="form-group">
+        <label>Data de Nascimento</label>
+        <input type="date" id="m-t-dob">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Segmento(s) de Atuação</label>
+      <div class="checkbox-group">
+        <label class="checkbox-item" onclick="toggleCheck(event,this)">
+          <input type="checkbox" value="Fundamental I"> Fundamental I
+        </label>
+        <label class="checkbox-item" onclick="toggleCheck(event,this)">
+          <input type="checkbox" value="Fundamental II"> Fundamental II
+        </label>
+        <label class="checkbox-item" onclick="toggleCheck(event,this)">
+          <input type="checkbox" value="Ensino Médio"> Ensino Médio
+        </label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-teacher')">Cancelar</button>
+      <button class="btn btn-primary" style="width:auto;" id="m-t-save-btn" onclick="saveTeacher()">Salvar Professor</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Activity -->
+<div class="modal-overlay" id="modal-activity">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="m-a-modal-title">Cadastrar Atividade</span>
+      <button class="modal-close" onclick="closeModal('modal-activity')">×</button>
+    </div>
+    <input type="hidden" id="m-a-id" value="">
+    <div class="form-group">
+      <label>Título da Atividade</label>
+      <input type="text" id="m-a-title" placeholder="Ex.: Jogo de Basquete — Semifinal">
+    </div>
+    <div class="grid-2">
+      <div class="form-group">
+        <label>Tipo</label>
+        <select id="m-a-type">
+          </select>
+      </div>
+      <div class="form-group">
+        <label>Carga Horária (hrs)</label>
+        <input type="number" id="m-a-hours" placeholder="2" min="0.5" step="0.5">
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="form-group">
+        <label>Data</label>
+        <input type="date" id="m-a-date">
+      </div>
+      <div class="form-group">
+        <label>Horário</label>
+        <input type="time" id="m-a-time">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Professor Responsável</label>
+      <select id="m-a-teacher">
+        <option value="">Selecione o professor...</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Descrição / Observações</label>
+      <textarea id="m-a-desc" placeholder="Detalhes sobre a atividade..."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-activity')">Cancelar</button>
+      <button class="btn btn-primary" style="width:auto;" id="m-a-save-btn" onclick="saveActivity()">Salvar Atividade</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Presença -->
+<div class="modal-overlay" id="modal-confirm">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-header">
+      <span class="modal-title">Confirmar Presença</span>
+      <button class="modal-close" onclick="closeModal('modal-confirm')">×</button>
+    </div>
+    <p style="color:var(--text2);font-size:14px;margin-bottom:8px;">Confirmar sua presença na atividade:</p>
+    <p style="font-weight:700;font-size:15px;margin-bottom:16px;" id="confirm-act-name"></p>
+    <div style="background:var(--warn-bg);border:1px solid #FDE68A;border-radius:var(--radius-sm);padding:12px 14px;font-size:13px;color:#92400E;">
+      ⚠️ Após confirmar, você deverá enviar um comprovante (foto da súmula, lista de presença, etc.) para que as horas sejam contabilizadas.
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-confirm')">Cancelar</button>
+      <button class="btn btn-primary" style="width:auto;" onclick="doConfirm()">✅ Confirmar Presença</button>
+    </div>
+  </div>
+</div>
+
+<!-- Enviar Comprovante (professor) -->
+<div class="modal-overlay" id="modal-comprovante">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <span class="modal-title">📎 Enviar Comprovante</span>
+      <button class="modal-close" onclick="closeModal('modal-comprovante')">×</button>
+    </div>
+    <p style="color:var(--text2);font-size:13px;margin-bottom:4px;">Atividade:</p>
+    <p style="font-weight:700;font-size:15px;margin-bottom:16px;" id="comp-act-name"></p>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px;">Envie uma foto ou imagem do documento comprobatório (súmula, lista de presença, declaração, etc.).</p>
+    <div class="upload-area" id="upload-area" onclick="document.getElementById('comp-file-input').click()" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleDrop(event)">
+      <input type="file" id="comp-file-input" accept="image/*" onchange="handleFileSelect(event)" style="display:none;">
+      <div class="upload-icon">🖼️</div>
+      <p><strong>Clique para selecionar</strong> ou arraste a imagem aqui</p>
+      <p style="font-size:11px;margin-top:4px;">JPG, PNG, WEBP — máx. 10MB</p>
+    </div>
+    <div class="preview-wrap" id="comp-preview-wrap">
+      <img id="comp-preview-img" src="" alt="Comprovante">
+      <button class="preview-remove" onclick="removePreview()" title="Remover imagem">×</button>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-comprovante')">Cancelar</button>
+      <button class="btn btn-primary" style="width:auto;" id="btn-enviar-comp" onclick="enviarComprovante()" disabled>📤 Enviar Comprovante</button>
+    </div>
+  </div>
+</div>
+
+<!-- Analisar Comprovante (coordenação) -->
+<div class="modal-overlay" id="modal-analisar">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-header">
+      <span class="modal-title">🔍 Analisar Comprovante</span>
+      <button class="modal-close" onclick="closeModal('modal-analisar')">×</button>
+    </div>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:2px;">Atividade</p>
+    <p style="font-weight:700;font-size:15px;margin-bottom:4px;" id="anal-act-name"></p>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:14px;" id="anal-act-meta"></p>
+    <div class="comp-img-wrap">
+      <img id="anal-comp-img" src="" alt="Comprovante enviado pelo professor">
+    </div>
+    <div class="form-group" style="margin-bottom:8px;">
+      <label>Observação (opcional)</label>
+      <textarea id="anal-obs" placeholder="Motivo da reprovação ou observação..." style="min-height:64px;"></textarea>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between;">
+      <button class="btn btn-danger" style="width:auto;" onclick="reprovarAtividade()">❌ Reprovar</button>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-outline" onclick="closeModal('modal-analisar')">Fechar</button>
+        <button class="btn btn-primary" style="width:auto;background:linear-gradient(135deg,#34D399,#059669);box-shadow:0 4px 14px rgba(52,211,153,0.35);" onclick="aprovarAtividade()">✅ Aprovar Horas</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════
+// STATE
+// ══════════════════════════════════
+// ═══════════════════════════════════════════════════
+// PERSISTÊNCIA LOCAL (localStorage)
+// Quando o banco de dados for integrado, substitua
+// loadState/saveState pelas chamadas à API.
+// ═══════════════════════════════════════════════════
+const STORAGE_KEY = 'bancoHoras_v1';
+
+const DEFAULT_STATE = {
+  teachers: [
+    { id: 1, name: 'Ana Clara Mendes', cpf: '123.456.789-00', dob: '1988-03-15', segments: ['Fundamental I', 'Fundamental II'] },
+    { id: 2, name: 'Bruno Oliveira', cpf: '987.654.321-00', dob: '1985-07-22', segments: ['Ensino Médio'] },
+    { id: 3, name: 'Carla Fonseca', cpf: '111.222.333-44', dob: '1991-11-30', segments: ['Fundamental I'] },
+  ],
+  activities: [
+    { id: 1, title: 'Jogo de Futebol — Final Escolar', type: 'Jogo/Evento', teacherId: 1, date: '2025-04-28', time: '14:00', hours: 3, desc: 'Final do campeonato interno', status: 'pendente', comprovante: null, obs: null },
+    { id: 2, title: 'Aula de Reforço — Matemática', type: 'Aula Extra', teacherId: 1, date: '2025-04-22', time: '07:00', hours: 2, desc: 'Reforço pré-prova', status: 'aprovado', comprovante: null, obs: null },
+    { id: 3, title: 'Olimpíada de Ciências', type: 'Olimpíada', teacherId: 2, date: '2025-04-30', time: '08:00', hours: 5, desc: 'Preparação para olimpíada estadual', status: 'aguardando_comprovante', comprovante: null, obs: null },
+    { id: 4, title: 'Reunião Pedagógica', type: 'Reunião', teacherId: 3, date: '2025-04-20', time: '17:00', hours: 1.5, desc: 'Planejamento bimestral', status: 'aprovado', comprovante: null, obs: null },
+    { id: 5, title: 'Excursão Museu Histórico', type: 'Excursão', teacherId: 2, date: '2025-05-05', time: '07:30', hours: 6, desc: 'Visita guiada com alunos', status: 'pendente', comprovante: null, obs: null },
+  ],
+  currentTeacher: null,
+  confirmActivityId: null,
+  nextTeacherId: 4,
+  nextActivityId: 6,
+  coordPasswordHash: '42917e39f26c6bb0aa976c1935910bd58bf9953a45e574390ba9381bf5c2e64f',
+  hourlyRates: {
+    'Fundamental I': 0,
+    'Fundamental II': 0,
+    'Ensino Médio': 0,
+  },
+  activityTypes: [
+    { name: 'Jogo/Evento', emoji: '⚽' },
+    { name: 'Aula Extra', emoji: '📚' },
+    { name: 'Reunião', emoji: '🤝' },
+    { name: 'Olimpíada', emoji: '🏆' },
+    { name: 'Excursão', emoji: '🚌' },
+    { name: 'Outro', emoji: '📌' },
+  ],
+};
+
+function loadState() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) return JSON.parse(JSON.stringify(DEFAULT_STATE));
+    const parsed = JSON.parse(saved);
+    // Mescla com defaults para garantir que novos campos existam
+    return {
+      ...JSON.parse(JSON.stringify(DEFAULT_STATE)),
+      ...parsed,
+      currentTeacher: null,   // nunca persiste sessão
+      confirmActivityId: null,
+    };
+  } catch(e) {
+    console.warn('Erro ao carregar estado:', e);
+    return JSON.parse(JSON.stringify(DEFAULT_STATE));
+  }
+}
+
+function saveState() {
+  try {
+    const toSave = { ...state, currentTeacher: null, confirmActivityId: null };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+  } catch(e) {
+    console.warn('Erro ao salvar estado:', e);
+  }
+}
+
+let state = loadState();
+
+// ══════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function teacherNav(panel, el) {
+  document.querySelectorAll('#app-teacher .nav-item').forEach(n => n.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('#app-teacher .panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('t-panel-' + panel).classList.add('active');
+  document.getElementById('t-page-title').textContent = el.textContent.trim().replace(/\d+/g,'').trim();
+  if (panel === 'atividades') renderTeacherActivities();
+  if (panel === 'historico') renderTeacherHistory();
+  if (panel === 'dashboard') renderTeacherDashboard();
+}
+
+function coordNav(panel, el) {
+  document.querySelectorAll('#app-coord .nav-item').forEach(n => n.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('#app-coord .panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('c-panel-' + panel).classList.add('active');
+  document.getElementById('c-page-title').textContent = el.textContent.trim().replace(/\d+/,'').trim();
+  document.getElementById('c-topbar-action').style.display = panel === 'atividades' ? 'flex' : 'none';
+  if (panel === 'dashboard') renderCoordDashboard();
+  if (panel === 'professores') renderTeachersTable();
+  if (panel === 'atividades') renderActivitiesTable();
+  if (panel === 'relatorio') renderRelatorio();
+  if (panel === 'configuracoes') renderConfigPanel();
+  updateAnaliseBadge();
+}
+
+// ══════════════════════════════════
+// AUTH
+// ══════════════════════════════════
+function loginTeacher() {
+  const cpf = document.getElementById('t-cpf').value.trim();
+  const dob = document.getElementById('t-dob').value;
+  const teacher = state.teachers.find(t => t.cpf === cpf && t.dob === dob);
+  if (!teacher) {
+    document.getElementById('teacher-error').style.display = 'block'; return;
+  }
+  document.getElementById('teacher-error').style.display = 'none';
+  state.currentTeacher = teacher;
+  document.getElementById('t-avatar').textContent = teacher.name.split(' ').map(w=>w[0]).slice(0,2).join('');
+  document.getElementById('t-sidebar-name').textContent = teacher.name.split(' ').slice(0,2).join(' ');
+  document.getElementById('t-sidebar-seg').textContent = teacher.segments.join(', ');
+  setDate('t-date');
+  renderTeacherDashboard();
+  renderTeacherActivities();
+  renderTeacherHistory();
+  showPage('app-teacher');
+}
+
+async function hashSHA256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+async function loginCoord() {
+  const u = document.getElementById('c-user').value.trim();
+  const p = document.getElementById('c-pass').value;
+  const h = await hashSHA256(p);
+  if (u === 'coordenacao' && h === state.coordPasswordHash) {
+    setDate('c-date');
+    populateTeacherSelect();
+    renderCoordDashboard();
+    renderTeachersTable();
+    renderActivitiesTable();
+    renderRelatorio();
+    renderConfigPanel();
+    updateAnaliseBadge();
+    showPage('app-coord');
+  } else {
+    document.getElementById('coord-error').style.display = 'block';
+  }
+}
+
+function logout() {
+  state.currentTeacher = null;
+  document.getElementById('t-cpf').value = '';
+  document.getElementById('t-dob').value = '';
+  document.getElementById('teacher-error').style.display = 'none';
+  document.getElementById('c-user').value = '';
+  document.getElementById('c-pass').value = '';
+  document.getElementById('coord-error').style.display = 'none';
+  // Clear teacher panels
+  const clearIds = ['t-stats-grid','t-upcoming-list','t-all-activities','t-history-body'];
+  clearIds.forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
+  document.getElementById('t-total-hours').innerHTML = '0 <span>hrs</span>';
+  const badgeEl = document.getElementById('t-pending-badge');
+  if (badgeEl) { badgeEl.textContent = ''; badgeEl.style.display = 'none'; }
+  // Reset teacher nav
+  document.querySelectorAll('#app-teacher .nav-item').forEach((n,i) => i===0 ? n.classList.add('active') : n.classList.remove('active'));
+  document.querySelectorAll('#app-teacher .panel').forEach((p,i) => i===0 ? p.classList.add('active') : p.classList.remove('active'));
+  document.getElementById('t-page-title').textContent = 'Dashboard';
+  // Reset coord nav
+  document.querySelectorAll('#app-coord .nav-item').forEach((n,i) => i===0 ? n.classList.add('active') : n.classList.remove('active'));
+  document.querySelectorAll('#app-coord .panel').forEach((p,i) => i===0 ? p.classList.add('active') : p.classList.remove('active'));
+  document.getElementById('c-page-title').textContent = 'Dashboard Geral';
+  showPage('landing');
+}
+
+// ══════════════════════════════════
+// HELPERS
+// ══════════════════════════════════
+function setDate(id) {
+  const now = new Date();
+  document.getElementById(id).textContent = now.toLocaleDateString('pt-BR', {weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+}
+
+function maskCPF(el) {
+  let v = el.value.replace(/\D/g,'');
+  if (v.length > 3) v = v.slice(0,3) + '.' + v.slice(3);
+  if (v.length > 7) v = v.slice(0,7) + '.' + v.slice(7);
+  if (v.length > 11) v = v.slice(0,11) + '-' + v.slice(11);
+  el.value = v.slice(0,14);
+}
+
+function getTeacher(id) { return state.teachers.find(t => t.id === id); }
+
+function getTeacherActivities(teacherId) {
+  return state.activities.filter(a => a.teacherId === teacherId);
+}
+
+function getTeacherHours(teacherId) {
+  return state.activities
+    .filter(a => a.teacherId === teacherId && a.status === 'aprovado')
+    .reduce((s, a) => s + a.hours, 0);
+}
+
+function formatDate(d) {
+  if (!d) return '';
+  const [y,m,day] = d.split('-');
+  return `${day}/${m}/${y}`;
+}
+
+function typeIcon(type) {
+  const t = state.activityTypes.find(x => x.name === type);
+  return t ? t.emoji : '📌';
+}
+
+function typeBg(type) {
+  const map = {'Jogo/Evento':'#DBEAFE','Aula Extra':'#CCFBF1','Reunião':'#FEF3C7','Olimpíada':'#F3E8FF','Excursão':'#FEF9C3','Outro':'#F1F5F9'};
+  return map[type] || '#F0FDFA';
+}
+
+function segTag(seg) {
+  if (seg === 'Fundamental I')  return `<span class="seg-tag seg-fi">F.I</span>`;
+  if (seg === 'Fundamental II') return `<span class="seg-tag seg-fii">F.II</span>`;
+  if (seg === 'Ensino Médio')   return `<span class="seg-tag seg-em">E.M</span>`;
+  const abbr = seg.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,4);
+  return `<span class="seg-tag" style="background:#F1F5F9;color:#475569;">${abbr}</span>`;
+}
+
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = type === 'success' ? '✅ ' + msg : '❌ ' + msg;
+  t.className = 'toast ' + type + ' show';
+  setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+function statusBadgeHtml(status) {
+  const map = {
+    pendente:               '<span class="badge-pill badge-warn">⏳ Pendente</span>',
+    aguardando_comprovante: '<span class="badge-pill badge-orange">📎 Aguard. Comprovante</span>',
+    em_analise:             '<span class="badge-pill badge-indigo">🔍 Em Análise</span>',
+    aprovado:               '<span class="badge-pill badge-approved">✅ Aprovado</span>',
+    reprovado:              '<span class="badge-pill badge-red">❌ Reprovado</span>',
+  };
+  return map[status] || `<span class="badge-pill badge-warn">${status}</span>`;
+}
+
+function toggleCheck(event, label) {
+  event.preventDefault();
+  label.classList.toggle('checked');
+  label.querySelector('input').checked = label.classList.contains('checked');
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ══════════════════════════════════
+// TEACHER DASHBOARD
+// ══════════════════════════════════
+function renderTeacherDashboard() {
+  const t = state.currentTeacher;
+  const acts = getTeacherActivities(t.id);
+  const aprovadas = acts.filter(a => a.status === 'aprovado');
+  const pendentes = acts.filter(a => a.status === 'pendente');
+  const aguardando = acts.filter(a => a.status === 'aguardando_comprovante');
+  const emAnalise = acts.filter(a => a.status === 'em_analise');
+  const reprovadas = acts.filter(a => a.status === 'reprovado');
+  const totalHrs = aprovadas.reduce((s,a) => s+a.hours, 0);
+  const fmtHrs = h => Number.isInteger(h) ? h : h.toFixed(1);
+
+  document.getElementById('t-total-hours').innerHTML = `${fmtHrs(totalHrs)} <span>hrs</span>`;
+  const pendBadge = pendentes.length + aguardando.length + reprovadas.length;
+  const badgeEl = document.getElementById('t-pending-badge');
+  badgeEl.textContent = pendBadge || '';
+  badgeEl.style.display = pendBadge > 0 ? 'inline-flex' : 'none';
+
+  document.getElementById('t-stats-grid').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-header"><div class="stat-icon cyan">📋</div></div>
+      <div class="stat-value">${acts.length}</div>
+      <div class="stat-label">Total de Atividades</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-header"><div class="stat-icon green">✅</div></div>
+      <div class="stat-value">${aprovadas.length}</div>
+      <div class="stat-label">Aprovadas</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-header"><div class="stat-icon warn">⏳</div></div>
+      <div class="stat-value">${pendentes.length + aguardando.length + emAnalise.length}</div>
+      <div class="stat-label">Em Andamento</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-header"><div class="stat-icon purple">⭐</div></div>
+      <div class="stat-value">${fmtHrs(totalHrs)}</div>
+      <div class="stat-label">Horas Aprovadas</div>
+    </div>
+  `;
+
+  // Atividades que precisam de ação do professor
+  const acoes = [...pendentes, ...aguardando, ...reprovadas].sort((a,b) => a.date.localeCompare(b.date)).slice(0,5);
+  const ul = document.getElementById('t-upcoming-list');
+  if (!acoes.length) {
+    ul.innerHTML = `<div class="empty-state"><div class="empty-icon">🎉</div><p>Nenhuma ação necessária!</p></div>`;
+  } else {
+    ul.innerHTML = acoes.map(a => activityCard(a, true)).join('');
+  }
+}
+
+function activityCard(a, showActions=false) {
+  const icon = typeIcon(a.type);
+  const bg = typeBg(a.type);
+  let actionBtn = '';
+  if (showActions) {
+    if (a.status === 'pendente') {
+      actionBtn = `<button class="check-btn" onclick="promptConfirm(${a.id})" title="Confirmar presença">✓</button>`;
+    } else if (a.status === 'aguardando_comprovante') {
+      actionBtn = `<button class="btn btn-sm" style="background:#FFF7ED;color:#C2410C;border:1px solid #FED7AA;font-size:12px;" onclick="openComprovante(${a.id})">📎 Enviar Comprovante</button>`;
+    } else if (a.status === 'reprovado') {
+      actionBtn = `<button class="btn btn-sm" style="background:var(--danger-bg);color:#991B1B;border:1px solid #FECACA;font-size:12px;" onclick="openComprovante(${a.id})">🔄 Reenviar</button>`;
+    }
+  }
+  const obsHtml = a.obs ? `<div style="font-size:11px;color:var(--danger);margin-top:4px;">💬 ${a.obs}</div>` : '';
+  return `
+    <div class="activity-item ${a.status==='aprovado'?'done':''}">
+      <div class="activity-icon" style="background:${bg}">${icon}</div>
+      <div class="activity-body">
+        <div class="activity-title">${a.title}</div>
+        <div class="activity-meta">
+          <span>📅 ${formatDate(a.date)}</span>
+          <span>🕐 ${a.time || '--'}</span>
+          <span>⏱ ${a.hours}h</span>
+          <span>🏷 ${a.type}</span>
+        </div>
+        ${a.desc ? `<div style="font-size:12px;color:var(--text3);margin-top:4px;">${a.desc}</div>` : ''}
+        ${obsHtml}
+      </div>
+      <div class="activity-actions" style="flex-direction:column;align-items:flex-end;gap:6px;">
+        ${statusBadgeHtml(a.status)}
+        ${actionBtn}
+      </div>
+    </div>`;
+}
+
+function renderTeacherActivities() {
+  const t = state.currentTeacher;
+  const filter = document.getElementById('t-filter-status').value;
+  let acts = getTeacherActivities(t.id);
+  if (filter) acts = acts.filter(a => a.status === filter);
+  acts.sort((a,b) => b.date.localeCompare(a.date));
+  const el = document.getElementById('t-all-activities');
+  if (!acts.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><p>Nenhuma atividade encontrada.</p></div>`;
+  } else {
+    el.innerHTML = acts.map(a => activityCard(a, true)).join('');
+  }
+}
+
+function renderTeacherHistory() {
+  const t = state.currentTeacher;
+  const acts = getTeacherActivities(t.id).sort((a,b) => b.date.localeCompare(a.date));
+  const tbody = document.getElementById('t-history-body');
+  if (!acts.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:32px;">Nenhum registro.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = acts.map(a => `
+    <tr>
+      <td><strong>${a.title}</strong>${a.obs ? `<br><span style="font-size:11px;color:var(--danger);">💬 ${a.obs}</span>` : ''}</td>
+      <td>${formatDate(a.date)}</td>
+      <td>${a.hours}h</td>
+      <td><span class="badge-pill badge-blue">${typeIcon(a.type)} ${a.type}</span></td>
+      <td>${statusBadgeHtml(a.status)}</td>
+    </tr>`).join('');
+}
+
+function promptConfirm(id) {
+  const a = state.activities.find(x => x.id === id);
+  if (!a || a.status !== 'pendente') return;
+  state.confirmActivityId = id;
+  document.getElementById('confirm-act-name').textContent = a.title;
+  openModal('modal-confirm');
+}
+
+function doConfirm() {
+  const a = state.activities.find(x => x.id === state.confirmActivityId);
+  if (a) { a.status = 'aguardando_comprovante'; }
+  closeModal('modal-confirm');
+  renderTeacherDashboard();
+  renderTeacherActivities();
+  renderTeacherHistory();
+  showToast('Presença confirmada! Agora envie o comprovante.');
+}
+
+// ══════════════════════════════════
+// COMPROVANTE — PROFESSOR
+// ══════════════════════════════════
+function openComprovante(id) {
+  const a = state.activities.find(x => x.id === id);
+  if (!a) return;
+  state.confirmActivityId = id;
+  document.getElementById('comp-act-name').textContent = a.title;
+  // reset upload
+  document.getElementById('comp-file-input').value = '';
+  document.getElementById('comp-preview-img').src = '';
+  document.getElementById('comp-preview-wrap').style.display = 'none';
+  document.getElementById('btn-enviar-comp').disabled = true;
+  state._pendingComprovante = null;
+  openModal('modal-comprovante');
+}
+
+function handleFileSelect(event) {
+  const file = event.target.files[0];
+  if (file) processFile(file);
+}
+
+function handleDrop(event) {
+  event.preventDefault();
+  document.getElementById('upload-area').classList.remove('drag-over');
+  const file = event.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) processFile(file);
+}
+
+function processFile(file) {
+  if (file.size > 10 * 1024 * 1024) { showToast('Arquivo muito grande. Máximo 10MB.', 'error'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    state._pendingComprovante = e.target.result;
+    document.getElementById('comp-preview-img').src = e.target.result;
+    document.getElementById('comp-preview-wrap').style.display = 'block';
+    document.getElementById('btn-enviar-comp').disabled = false;
+  };
+  reader.readAsDataURL(file);
+}
+
+function removePreview() {
+  state._pendingComprovante = null;
+  document.getElementById('comp-preview-img').src = '';
+  document.getElementById('comp-preview-wrap').style.display = 'none';
+  document.getElementById('btn-enviar-comp').disabled = true;
+  document.getElementById('comp-file-input').value = '';
+}
+
+function enviarComprovante() {
+  if (!state._pendingComprovante) { showToast('Selecione uma imagem.', 'error'); return; }
+  const a = state.activities.find(x => x.id === state.confirmActivityId);
+  if (a) {
+    a.comprovante = state._pendingComprovante;
+    a.status = 'em_analise';
+    a.obs = null;
+  }
+  state._pendingComprovante = null;
+  closeModal('modal-comprovante');
+  renderTeacherDashboard();
+  renderTeacherActivities();
+  renderTeacherHistory();
+  showToast('Comprovante enviado! Aguarde a análise da coordenação.');
+}
+
+
+function renderCoordDashboard() {
+  const totalTeachers = state.teachers.length;
+  const totalActivities = state.activities.length;
+  const aprovadas = state.activities.filter(a => a.status === 'aprovado').length;
+  const emAnalise = state.activities.filter(a => a.status === 'em_analise').length;
+  const totalHrs = state.activities.filter(a => a.status === 'aprovado').reduce((s,a) => s+a.hours, 0);
+  const fmtHrs = h => Number.isInteger(h) ? h : h.toFixed(1);
+
+  document.getElementById('c-stats-grid').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-header"><div class="stat-icon cyan">👥</div></div>
+      <div class="stat-value">${totalTeachers}</div>
+      <div class="stat-label">Professores Cadastrados</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-header"><div class="stat-icon purple">📋</div></div>
+      <div class="stat-value">${totalActivities}</div>
+      <div class="stat-label">Atividades Lançadas</div>
+    </div>
+    <div class="stat-card" style="${emAnalise>0?'border-color:#A5B4FC;':''}">
+      <div class="stat-header"><div class="stat-icon" style="background:#EEF2FF;">🔍</div>${emAnalise>0?`<span style="font-size:11px;font-weight:700;color:#3730A3;background:#C7D2FE;padding:2px 8px;border-radius:50px;">${emAnalise} nova${emAnalise>1?'s':''}</span>`:''}</div>
+      <div class="stat-value">${emAnalise}</div>
+      <div class="stat-label">Aguardando Análise</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-header"><div class="stat-icon warn">⏱</div></div>
+      <div class="stat-value">${fmtHrs(totalHrs)}</div>
+      <div class="stat-label">Horas Aprovadas</div>
+    </div>
+  `;
+
+  // Horas por segmento
+  const segs = ['Fundamental I','Fundamental II','Ensino Médio'];
+  const segHours = segs.map(seg => {
+    const teachers = state.teachers.filter(t => t.segments.includes(seg));
+    const hrs = teachers.reduce((s,t) => s + getTeacherHours(t.id), 0);
+    return { seg, hrs };
+  });
+  const maxHrs = Math.max(...segHours.map(s => s.hrs), 1);
+  document.getElementById('c-seg-chart').innerHTML = segHours.map(s => `
+    <div style="margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px;">
+        <span style="font-weight:600;">${s.seg}</span>
+        <span style="color:var(--text2);">${fmtHrs(s.hrs)}h</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${(s.hrs/maxHrs)*100}%"></div></div>
+    </div>`).join('');
+
+  // Timeline recente
+  const recent = [...state.activities].sort((a,b) => b.date.localeCompare(a.date)).slice(0,6);
+  document.getElementById('c-recent-timeline').innerHTML = recent.map((a,i) => {
+    const t = getTeacher(a.teacherId);
+    const dotClass = a.status === 'aprovado' ? 'done' : a.status === 'reprovado' ? 'pending' : 'future';
+    return `
+      <div class="timeline-item">
+        ${i < recent.length-1 ? '<div class="timeline-line"></div>' : ''}
+        <div class="timeline-dot ${dotClass}"></div>
+        <div class="timeline-content">
+          <strong>${a.title}</strong>
+          <span>${formatDate(a.date)} · ${t ? t.name.split(' ')[0] : ''} · ${a.hours}h · ${statusBadgeHtml(a.status)}</span>
+        </div>
+      </div>`;}).join('');
+
+  // Top teachers
+  const sorted = [...state.teachers].map(t => ({ ...t, hrs: getTeacherHours(t.id) })).sort((a,b) => b.hrs - a.hrs);
+  document.getElementById('c-top-teachers').innerHTML = sorted.map((t,i) => `
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);${i===sorted.length-1?'border:none':''}">
+      <div style="width:28px;height:28px;border-radius:50%;background:var(--cyan-light);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;color:var(--cyan-dark);">${i+1}</div>
+      <div class="user-avatar" style="font-size:11px;">${t.name.split(' ').map(w=>w[0]).slice(0,2).join('')}</div>
+      <div style="flex:1"><strong style="font-size:13px;">${t.name}</strong><br><span style="font-size:11px;color:var(--text2);">${t.segments.map(s=>segTag(s)).join('')}</span></div>
+      <div style="text-align:right;"><strong style="font-size:18px;">${fmtHrs(t.hrs)}</strong><span style="font-size:11px;color:var(--text2);"> hrs</span></div>
+    </div>`).join('');
+  updateAnaliseBadge();
+}
+
+// ══════════════════════════════════
+// TEACHERS TABLE
+// ══════════════════════════════════
+function renderTeachersTable(search='') {
+  let teachers = state.teachers;
+  if (search) teachers = teachers.filter(t => t.name.toLowerCase().includes(search.toLowerCase()) || t.cpf.includes(search));
+  const tbody = document.getElementById('c-teachers-body');
+  if (!teachers.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:32px;">Nenhum professor encontrado.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = teachers.map(t => `
+    <tr>
+      <td><div style="display:flex;align-items:center;gap:10px;">
+        <div class="user-avatar" style="font-size:11px;width:32px;height:32px;">${t.name.split(' ').map(w=>w[0]).slice(0,2).join('')}</div>
+        <strong>${t.name}</strong>
+      </div></td>
+      <td style="color:var(--text2);">${t.cpf}</td>
+      <td>${t.segments.map(s=>segTag(s)).join('')}</td>
+      <td>${formatDate(t.dob)}</td>
+      <td><strong>${getTeacherHours(t.id)}h</strong></td>
+      <td style="display:flex;gap:6px;">
+        <button class="btn btn-sm" style="background:var(--blue-bg);color:#1E40AF;border:1px solid #BFDBFE;" onclick="openEditTeacherModal(${t.id})">✏️ Editar</button>
+        <button class="btn btn-danger btn-xs" onclick="deleteTeacher(${t.id})">🗑 Remover</button>
+      </td>
+    </tr>`).join('');
+}
+
+function deleteTeacher(id) {
+  if (!confirm('Remover este professor?')) return;
+  state.teachers = state.teachers.filter(t => t.id !== id);
+  state.activities = state.activities.filter(a => a.teacherId !== id);
+  renderTeachersTable();
+  renderCoordDashboard();
+  renderRelatorio();
+  populateTeacherSelect();
+  updateAnaliseBadge();
+  showToast('Professor removido.');
+}
+
+// ══════════════════════════════════
+// ACTIVITIES TABLE
+// ══════════════════════════════════
+function renderActivitiesTable() {
+  // Always keep teacher filter select populated
+  populateTeacherSelect();
+
+  const filter = document.getElementById('c-filter-teacher').value;
+  const statusFilter = document.getElementById('c-filter-status-coord') ? document.getElementById('c-filter-status-coord').value : '';
+  const monthFilter = document.getElementById('c-filter-month') ? document.getElementById('c-filter-month').value : '';
+
+  // Populate month select with months that have activities
+  const monthSel = document.getElementById('c-filter-month');
+  if (monthSel) {
+    const months = [...new Set(state.activities.map(a => a.date.slice(0,7)))].sort((a,b) => b.localeCompare(a));
+    const prev = monthSel.value;
+    monthSel.innerHTML = '<option value="">Todos os meses</option>' + months.map(k => {
+      const [y,m] = k.split('-');
+      const label = new Date(parseInt(y), parseInt(m)-1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+      return `<option value="${k}" ${k === prev ? 'selected' : ''}>${label}</option>`;
+    }).join('');
+  }
+
+  let acts = state.activities;
+  if (filter) acts = acts.filter(a => a.teacherId == filter);
+  if (statusFilter) acts = acts.filter(a => a.status === statusFilter);
+  if (monthFilter) acts = acts.filter(a => a.date.slice(0,7) === monthFilter);
+  acts = [...acts].sort((a,b) => b.date.localeCompare(a.date));
+  const tbody = document.getElementById('c-activities-body');
+  if (!acts.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:32px;">Nenhuma atividade cadastrada.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = acts.map(a => {
+    const t = getTeacher(a.teacherId);
+
+    // Coluna Confirmação
+    let confirmCol = '';
+    if (a.status === 'pendente') {
+      confirmCol = `<button class="btn btn-sm" style="background:var(--success-bg);color:#065F46;border:1px solid #A7F3D0;" onclick="confirmActivity(${a.id})" title="Confirmar presença">✅ Confirmar</button>`;
+    } else {
+      confirmCol = `<span style="display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;color:#1E3A35;background:#F1F5F4;border:1px solid #CBD5D3;border-radius:6px;padding:4px 10px;">✅ Confirmado</span>`;
+    }
+
+    // Coluna Ações (editar + excluir + analisar)
+    let actionBtn = '';
+    if (a.status === 'em_analise') {
+      actionBtn = `<button class="btn btn-sm" style="background:#EEF2FF;color:#3730A3;border:1px solid #C7D2FE;font-weight:700;" onclick="abrirAnalise(${a.id})" title="Analisar comprovante">🔍 Analisar</button>`;
+    }
+    return `
+      <tr>
+        <td><strong>${a.title}</strong>${a.desc ? `<br><span style="font-size:11px;color:var(--text3);">${a.desc.slice(0,50)}${a.desc.length>50?'...':''}</span>` : ''}</td>
+        <td><span class="badge-pill badge-blue">${typeIcon(a.type)} ${a.type}</span></td>
+        <td>${t ? t.name.split(' ').slice(0,2).join(' ') : '—'}</td>
+        <td>${formatDate(a.date)} ${a.time ? '· '+a.time : ''}</td>
+        <td><strong>${a.hours}h</strong></td>
+        <td>${statusBadgeHtml(a.status)}</td>
+        <td>${confirmCol}</td>
+        <td style="display:flex;gap:6px;flex-wrap:wrap;">
+          ${actionBtn}
+          <button class="btn btn-sm" style="background:var(--blue-bg);color:#1E40AF;border:1px solid #BFDBFE;" onclick="openEditActivityModal(${a.id})" title="Editar atividade">✏️ Editar</button>
+          <button class="btn btn-danger btn-xs" onclick="deleteActivity(${a.id})">🗑</button>
+        </td>
+      </tr>`;}).join('');
+}
+
+function confirmActivity(id) {
+  const a = state.activities.find(x => x.id === id);
+  if (a) a.status = 'aguardando_comprovante';
+  renderActivitiesTable();
+  renderCoordDashboard();
+  renderRelatorio();
+  updateAnaliseBadge();
+  showToast('Presença confirmada! Aguardando comprovante do professor.');
+}
+
+function deleteActivity(id) {
+  if (!confirm('Remover esta atividade?')) return;
+  state.activities = state.activities.filter(a => a.id !== id);
+  renderActivitiesTable();
+  renderCoordDashboard();
+  renderRelatorio();
+  updateAnaliseBadge();
+  showToast('Atividade removida.');
+}
+
+function updateAnaliseBadge() {
+  const count = state.activities.filter(a => a.status === 'em_analise').length;
+  const badge = document.getElementById('c-analise-badge');
+  if (badge) {
+    badge.textContent = count;
+    badge.style.display = count > 0 ? 'inline-flex' : 'none';
+  }
+}
+
+function abrirAnalise(id) {
+  const a = state.activities.find(x => x.id === id);
+  if (!a) return;
+  state.confirmActivityId = id;
+  const teacher = getTeacher(a.teacherId);
+  document.getElementById('anal-act-name').textContent = a.title;
+  document.getElementById('anal-act-meta').textContent =
+    `${teacher ? teacher.name : '—'} · ${formatDate(a.date)}${a.time ? ' às ' + a.time : ''} · ${a.hours}h · ${a.type}`;
+  document.getElementById('anal-comp-img').src = a.comprovante || '';
+  document.getElementById('anal-obs').value = '';
+  openModal('modal-analisar');
+}
+
+function aprovarAtividade() {
+  const a = state.activities.find(x => x.id === state.confirmActivityId);
+  if (a) {
+    a.status = 'aprovado';
+    a.obs = document.getElementById('anal-obs').value.trim() || null;
+  }
+  closeModal('modal-analisar');
+  renderActivitiesTable();
+  renderCoordDashboard();
+  renderRelatorio();
+  updateAnaliseBadge();
+  // Atualiza painel do professor se estiver logado e for a atividade dele
+  if (state.currentTeacher && a && a.teacherId === state.currentTeacher.id) {
+    renderTeacherDashboard();
+    renderTeacherActivities();
+    renderTeacherHistory();
+  }
+  showToast('Comprovante aprovado! Horas contabilizadas.');
+}
+
+function reprovarAtividade() {
+  const obs = document.getElementById('anal-obs').value.trim();
+  if (!obs) { showToast('Informe o motivo da reprovação na observação.', 'error'); return; }
+  const a = state.activities.find(x => x.id === state.confirmActivityId);
+  if (a) {
+    a.status = 'reprovado';
+    a.obs = obs;
+  }
+  closeModal('modal-analisar');
+  renderActivitiesTable();
+  renderCoordDashboard();
+  renderRelatorio();
+  updateAnaliseBadge();
+  // Atualiza painel do professor se estiver logado e for a atividade dele
+  if (state.currentTeacher && a && a.teacherId === state.currentTeacher.id) {
+    renderTeacherDashboard();
+    renderTeacherActivities();
+    renderTeacherHistory();
+  }
+  showToast('Comprovante reprovado. Professor será notificado para reenvio.');
+}
+
+// ══════════════════════════════════
+// MODALS
+// ══════════════════════════════════
+function openAddTeacherModal() {
+  document.getElementById('m-t-modal-title').textContent = 'Cadastrar Professor';
+  document.getElementById('m-t-save-btn').textContent = '💾 Salvar Professor';
+  document.getElementById('m-t-id').value = '';
+  document.getElementById('m-t-name').value = '';
+  document.getElementById('m-t-cpf').value = '';
+  document.getElementById('m-t-dob').value = '';
+  document.querySelectorAll('#modal-teacher .checkbox-item').forEach(el => {
+    el.classList.remove('checked');
+    el.querySelector('input').checked = false;
+  });
+  openModal('modal-teacher');
+}
+
+function openEditTeacherModal(id) {
+  const t = state.teachers.find(x => x.id === id);
+  if (!t) return;
+  document.getElementById('m-t-modal-title').textContent = 'Editar Professor';
+  document.getElementById('m-t-save-btn').textContent = '💾 Salvar Alterações';
+  document.getElementById('m-t-id').value = t.id;
+  document.getElementById('m-t-name').value = t.name;
+  document.getElementById('m-t-cpf').value = t.cpf;
+  document.getElementById('m-t-dob').value = t.dob;
+  document.querySelectorAll('#modal-teacher .checkbox-item').forEach(el => {
+    const val = el.querySelector('input').value;
+    const checked = t.segments.includes(val);
+    el.classList.toggle('checked', checked);
+    el.querySelector('input').checked = checked;
+  });
+  openModal('modal-teacher');
+}
+
+function saveTeacher() {
+  const name = document.getElementById('m-t-name').value.trim();
+  const cpf = document.getElementById('m-t-cpf').value.trim();
+  const dob = document.getElementById('m-t-dob').value;
+  const segments = [...document.querySelectorAll('#modal-teacher .checkbox-item.checked')].map(el => el.querySelector('input').value);
+  const editId = document.getElementById('m-t-id').value;
+
+  if (!name || !cpf || !dob || !segments.length) { showToast('Preencha todos os campos e selecione ao menos um segmento.', 'error'); return; }
+
+  if (editId) {
+    // Modo edição
+    const id = parseInt(editId);
+    const duplicate = state.teachers.find(t => t.cpf === cpf && t.id !== id);
+    if (duplicate) { showToast('CPF já cadastrado em outro professor.', 'error'); return; }
+    const t = state.teachers.find(x => x.id === id);
+    if (t) { t.name = name; t.cpf = cpf; t.dob = dob; t.segments = segments; }
+    // Atualiza currentTeacher se for o mesmo que está logado
+    if (state.currentTeacher && state.currentTeacher.id === id) {
+      state.currentTeacher = t;
+      document.getElementById('t-avatar').textContent = t.name.split(' ').map(w=>w[0]).slice(0,2).join('');
+      document.getElementById('t-sidebar-name').textContent = t.name.split(' ').slice(0,2).join(' ');
+      document.getElementById('t-sidebar-seg').textContent = t.segments.join(', ');
+    }
+    closeModal('modal-teacher');
+    renderTeachersTable();
+    renderCoordDashboard();
+    renderRelatorio();
+    populateTeacherSelect();
+    showToast('Professor atualizado com sucesso!');
+  } else {
+    // Modo criação
+    if (state.teachers.find(t => t.cpf === cpf)) { showToast('CPF já cadastrado.', 'error'); return; }
+    state.teachers.push({ id: state.nextTeacherId++, name, cpf, dob, segments });
+    closeModal('modal-teacher');
+    renderTeachersTable();
+    renderCoordDashboard();
+    renderRelatorio();
+    populateTeacherSelect();
+    showToast('Professor cadastrado com sucesso!');
+  }
+}
+
+function openAddModal() {
+  document.getElementById('m-a-modal-title').textContent = 'Cadastrar Atividade';
+  document.getElementById('m-a-save-btn').textContent = 'Salvar Atividade';
+  document.getElementById('m-a-id').value = '';
+  document.getElementById('m-a-title').value = '';
+  document.getElementById('m-a-hours').value = '';
+  document.getElementById('m-a-date').value = '';
+  document.getElementById('m-a-time').value = '';
+  document.getElementById('m-a-desc').value = '';
+  populateTeacherSelect();
+  openModal('modal-activity');
+}
+
+function openEditActivityModal(id) {
+  const a = state.activities.find(x => x.id === id);
+  if (!a) return;
+  document.getElementById('m-a-modal-title').textContent = 'Editar Atividade';
+  document.getElementById('m-a-save-btn').textContent = '💾 Salvar Alterações';
+  document.getElementById('m-a-id').value = a.id;
+  document.getElementById('m-a-title').value = a.title;
+  document.getElementById('m-a-hours').value = a.hours;
+  document.getElementById('m-a-date').value = a.date;
+  document.getElementById('m-a-time').value = a.time || '';
+  document.getElementById('m-a-desc').value = a.desc || '';
+  populateTeacherSelect();
+  // Aguarda o select ser populado antes de definir o valor
+  document.getElementById('m-a-teacher').value = a.teacherId;
+  // Pré-seleciona o tipo
+  const typeSelect = document.getElementById('m-a-type');
+  if (typeSelect) typeSelect.value = a.type;
+  openModal('modal-activity');
+}
+
+function populateTeacherSelect() {
+  const opts = state.teachers.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+  document.getElementById('m-a-teacher').innerHTML = '<option value="">Selecione o professor...</option>' + opts;
+
+  const filterSel = document.getElementById('c-filter-teacher');
+  if (filterSel) {
+    const prev = filterSel.value;
+    filterSel.innerHTML = '<option value="">Todos os professores</option>' + opts;
+    filterSel.value = prev;
+  }
+}
+
+function saveActivity() {
+  const title = document.getElementById('m-a-title').value.trim();
+  const type = document.getElementById('m-a-type').value;
+  const hours = parseFloat(document.getElementById('m-a-hours').value);
+  const date = document.getElementById('m-a-date').value;
+  const time = document.getElementById('m-a-time').value;
+  const teacherId = parseInt(document.getElementById('m-a-teacher').value);
+  const desc = document.getElementById('m-a-desc').value.trim();
+  const editId = document.getElementById('m-a-id').value;
+
+  if (!title || isNaN(hours) || hours <= 0 || !date || !teacherId) { showToast('Preencha todos os campos obrigatórios corretamente.', 'error'); return; }
+
+  if (editId) {
+    // Modo edição
+    const a = state.activities.find(x => x.id === parseInt(editId));
+    if (a) { a.title = title; a.type = type; a.hours = hours; a.date = date; a.time = time; a.teacherId = teacherId; a.desc = desc; }
+    closeModal('modal-activity');
+    renderActivitiesTable();
+    renderCoordDashboard();
+    renderRelatorio();
+    updateAnaliseBadge();
+    showToast('Atividade atualizada com sucesso!');
+  } else {
+    // Modo criação
+    state.activities.push({ id: state.nextActivityId++, title, type, teacherId, date, time, hours, desc, status: 'pendente', comprovante: null, obs: null });
+    closeModal('modal-activity');
+    renderActivitiesTable();
+    renderCoordDashboard();
+    renderRelatorio();
+    updateAnaliseBadge();
+    showToast('Atividade cadastrada!');
+  }
+}
+
+// ══════════════════════════════════
+// CONFIGURAÇÕES
+// ══════════════════════════════════
+function renderConfigPanel() {
+  renderActivityTypesList();
+  renderHourlyRates();
+  ['cfg-pass-current','cfg-pass-new','cfg-pass-confirm'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('cfg-pass-msg').style.display = 'none';
+}
+
+function renderHourlyRates() {
+  const map = { 'Fundamental I': 'cfg-rate-fi', 'Fundamental II': 'cfg-rate-fii', 'Ensino Médio': 'cfg-rate-em' };
+  Object.entries(map).forEach(([seg, id]) => {
+    const v = state.hourlyRates[seg] || 0;
+    document.getElementById(id).value = v > 0 ? v : '';
+  });
+}
+
+function saveHourlyRates() {
+  const fi  = parseFloat(document.getElementById('cfg-rate-fi').value)  || 0;
+  const fii = parseFloat(document.getElementById('cfg-rate-fii').value) || 0;
+  const em  = parseFloat(document.getElementById('cfg-rate-em').value)  || 0;
+  state.hourlyRates['Fundamental I']  = fi;
+  state.hourlyRates['Fundamental II'] = fii;
+  state.hourlyRates['Ensino Médio']   = em;
+  const msg = document.getElementById('cfg-rates-msg');
+  msg.textContent = '✅ Valores salvos com sucesso!';
+  msg.style.background = 'var(--success-bg)'; msg.style.color = '#065F46'; msg.style.border = '1px solid #A7F3D0';
+  msg.style.display = 'block';
+  setTimeout(() => msg.style.display = 'none', 3000);
+  showToast('Valores por hora aula atualizados!');
+  renderRelatorio();
+}
+
+// calcula o valor hora do professor com base nos seus segmentos e nas tarifas configuradas
+function calcTeacherRate(teacher) {
+  if (!teacher.segments || !teacher.segments.length) return 0;
+  const rates = teacher.segments.map(s => state.hourlyRates[s] || 0);
+  return Math.max(0, ...rates);
+}
+
+function fmtBRL(v) {
+  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+// ══════════════════════════════════
+// RELATÓRIO / PAYROLL
+// ══════════════════════════════════
+function renderRelatorio() {
+  const aprovadas = state.activities.filter(a => a.status === 'aprovado');
+  const pendentes = state.activities.filter(a => ['pendente','aguardando_comprovante','em_analise'].includes(a.status));
+  const reprovadas = state.activities.filter(a => a.status === 'reprovado');
+  const totalHrs = aprovadas.reduce((s,a) => s+a.hours, 0);
+  const fmtHrs = h => Number.isInteger(h) ? h : h.toFixed(1);
+
+  document.getElementById('c-report-stats').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-header"><div class="stat-icon green">✅</div></div>
+      <div class="stat-value">${fmtHrs(totalHrs)}</div>
+      <div class="stat-label">Horas Aprovadas</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-header"><div class="stat-icon warn">⏳</div></div>
+      <div class="stat-value">${pendentes.length}</div>
+      <div class="stat-label">Em Andamento</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-header"><div class="stat-icon purple">👥</div></div>
+      <div class="stat-value">${state.teachers.length}</div>
+      <div class="stat-label">Professores Ativos</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-header"><div class="stat-icon" style="background:var(--danger-bg);">❌</div></div>
+      <div class="stat-value">${reprovadas.length}</div>
+      <div class="stat-label">Reprovadas</div>
+    </div>
+  `;
+
+  document.getElementById('relatorio-step1').style.display = '';
+  document.getElementById('relatorio-step2').style.display = 'none';
+
+  const ratesOk = Object.values(state.hourlyRates).some(v => v > 0);
+  const list = document.getElementById('payroll-selection-list');
+
+  if (!aprovadas.length) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><p>Nenhuma atividade aprovada para exibir.</p></div>';
+    return;
+  }
+
+  // Group approved activities by year-month
+  const byMonth = {};
+  aprovadas.forEach(a => {
+    const key = a.date.slice(0, 7); // 'YYYY-MM'
+    if (!byMonth[key]) byMonth[key] = [];
+    byMonth[key].push(a);
+  });
+
+  // Sort months descending
+  const months = Object.keys(byMonth).sort((a,b) => b.localeCompare(a));
+
+  // Default: select previous month
+  const now = new Date();
+  const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const defaultKey = prevMonth.toISOString().slice(0, 7);
+
+  const monthLabel = key => {
+    const [y, m] = key.split('-');
+    return new Date(parseInt(y), parseInt(m)-1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  };
+
+  let html = '';
+  if (!ratesOk) {
+    html += `<div class="rate-warning">⚠️ Nenhum valor de hora aula configurado. Vá em <strong>Configurações → Valor da Hora Aula</strong> para definir os valores antes de gerar o relatório.</div>`;
+  }
+
+  // Month selector
+  html += `
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:24px;flex-wrap:wrap;">
+      <label style="font-weight:600;font-size:14px;">📅 Selecionar mês de referência:</label>
+      <select id="payroll-month-sel" onchange="renderPayrollMonth()" style="padding:9px 14px;border:1.5px solid var(--cyan);border-radius:var(--radius-sm);font-size:14px;font-weight:600;color:var(--cyan-dark);outline:none;cursor:pointer;">
+        ${months.map(k => `<option value="${k}" ${k === defaultKey ? 'selected' : ''}>${monthLabel(k)}</option>`).join('')}
+      </select>
+      <div style="display:flex;gap:8px;margin-left:auto;">
+        <button class="btn btn-sm btn-outline" onclick="selectAllPayroll(true)">✅ Marcar todas</button>
+        <button class="btn btn-sm btn-outline" onclick="selectAllPayroll(false)">⬜ Desmarcar</button>
+        <button class="btn btn-primary btn-sm" onclick="gerarRelatorio()" style="background:linear-gradient(135deg,#34D399,#059669);box-shadow:0 4px 14px rgba(52,211,153,0.3);">📄 Gerar Relatório</button>
+      </div>
+    </div>
+    <div id="payroll-month-acts"></div>
+  `;
+
+  list.innerHTML = html;
+
+  // Store months data for renderPayrollMonth
+  state._payrollMonths = byMonth;
+  renderPayrollMonth();
+}
+
+function renderPayrollMonth() {
+  const sel = document.getElementById('payroll-month-sel');
+  if (!sel) return;
+  const key = sel.value;
+  const acts = (state._payrollMonths || {})[key] || [];
+  const fmtHrs = h => Number.isInteger(h) ? h : h.toFixed(1);
+
+  if (!acts.length) {
+    document.getElementById('payroll-month-acts').innerHTML = '<div style="text-align:center;color:var(--text3);padding:20px;">Nenhuma atividade aprovada neste mês.</div>';
+    return;
+  }
+
+  // Group by teacher
+  const byTeacher = state.teachers.map(t => ({
+    teacher: t,
+    acts: acts.filter(a => a.teacherId === t.id)
+  })).filter(x => x.acts.length > 0);
+
+  let html = '';
+  byTeacher.forEach(({ teacher, acts: tActs }) => {
+    const rate = calcTeacherRate(teacher);
+    html += `
+      <div style="margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+          <div class="user-avatar" style="font-size:11px;width:32px;height:32px;">${teacher.name.split(' ').map(w=>w[0]).slice(0,2).join('')}</div>
+          <strong style="font-size:14px;">${teacher.name}</strong>
+          <span style="font-size:12px;color:var(--text2);">${teacher.segments.map(s=>segTag(s)).join('')}</span>
+          ${rate > 0 ? `<span style="font-size:12px;color:var(--cyan-dark);font-weight:600;margin-left:4px;">${fmtBRL(rate)}/h</span>` : `<span style="font-size:12px;color:var(--danger);">⚠️ sem valor</span>`}
+        </div>
+        ${tActs.map(a => {
+          const val = rate * a.hours;
+          return `
+          <div class="act-check-row selected" onclick="togglePayrollRow(this)" data-id="${a.id}">
+            <input type="checkbox" checked onclick="event.stopPropagation();this.closest('.act-check-row').classList.toggle('selected',this.checked)">
+            <div class="act-info">
+              <strong>${a.title}</strong>
+              <span>${formatDate(a.date)}${a.time?' · '+a.time:''} · ${a.hours}h · ${a.type}</span>
+            </div>
+            <div class="act-val">${rate > 0 ? fmtBRL(val) : '—'}</div>
+          </div>`;
+        }).join('')}
+      </div>`;
+  });
+
+  document.getElementById('payroll-month-acts').innerHTML = html;
+}
+
+function togglePayrollRow(el) {
+  const cb = el.querySelector('input[type=checkbox]');
+  cb.checked = !cb.checked;
+  el.classList.toggle('selected', cb.checked);
+}
+
+function selectAllPayroll(checked) {
+  document.querySelectorAll('#payroll-month-acts .act-check-row').forEach(row => {
+    row.querySelector('input[type=checkbox]').checked = checked;
+    row.classList.toggle('selected', checked);
+  });
+}
+
+function gerarRelatorio() {
+  const sel = document.getElementById('payroll-month-sel');
+  if (!sel) { showToast('Selecione um mês de referência.', 'error'); return; }
+
+  const selectedIds = [...document.querySelectorAll('#payroll-month-acts .act-check-row input:checked')]
+    .map(cb => parseInt(cb.closest('.act-check-row').dataset.id));
+
+  if (!selectedIds.length) { showToast('Selecione ao menos uma atividade para gerar o relatório.', 'error'); return; }
+
+  const monthKey = sel.value;
+  const [y, m] = monthKey.split('-');
+  const mesRef = new Date(parseInt(y), parseInt(m)-1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  const fmtHrs = h => Number.isInteger(h) ? h : h.toFixed(1);
+  const now = new Date();
+  const dataGeracao = now.toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' });
+
+  const selectedActs = state.activities.filter(a => selectedIds.includes(a.id));
+  const byTeacher = state.teachers.map(t => ({
+    teacher: t,
+    acts: selectedActs.filter(a => a.teacherId === t.id)
+  })).filter(x => x.acts.length > 0);
+
+  const totalVal = byTeacher.reduce((sum, {teacher, acts}) => {
+    const rate = calcTeacherRate(teacher);
+    return sum + acts.reduce((s,a) => s + rate*a.hours, 0);
+  }, 0);
+  const totalHrs = byTeacher.reduce((sum,{acts}) => sum + acts.reduce((s,a)=>s+a.hours,0), 0);
+
+  const html = `
+    <div style="font-family:'Segoe UI',system-ui,sans-serif;color:#1E3A35;max-width:780px;margin:0 auto;font-size:9px;">
+
+      <!-- Header -->
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #0F9A8A;">
+        <div>
+          <div style="font-size:12px;font-weight:800;color:#0F9A8A;">Banco de Horas</div>
+          <div style="font-size:7px;color:#4A7C75;">Gestão de Horas Extras</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:9px;font-weight:700;">Relatório de Pagamento — Horas Extras</div>
+          <div style="font-size:7px;color:#4A7C75;margin-top:2px;">Mês de referência: <strong style="color:#0F9A8A;">${mesRef}</strong></div>
+          <div style="font-size:7px;color:#94A3B8;margin-top:1px;">Emitido em ${dataGeracao}</div>
+        </div>
+      </div>
+
+      <!-- Totalizador -->
+      <div style="display:flex;gap:8px;margin-bottom:14px;">
+        <div style="flex:1;background:#F0FDFA;border:1.5px solid #D1FAF4;border-radius:6px;padding:7px 10px;">
+          <div style="font-size:6px;color:#4A7C75;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">Professores</div>
+          <div style="font-size:13px;font-weight:800;">${byTeacher.length}</div>
+        </div>
+        <div style="flex:1;background:#F0FDFA;border:1.5px solid #D1FAF4;border-radius:6px;padding:7px 10px;">
+          <div style="font-size:6px;color:#4A7C75;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">Total de Horas</div>
+          <div style="font-size:13px;font-weight:800;">${fmtHrs(totalHrs)}h</div>
+        </div>
+        <div style="flex:2;background:linear-gradient(135deg,#0F9A8A,#2DD4BF);border-radius:6px;padding:7px 10px;color:#fff;">
+          <div style="font-size:6px;opacity:0.85;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">Total a Pagar</div>
+          <div style="font-size:15px;font-weight:900;">${fmtBRL(totalVal)}</div>
+        </div>
+      </div>
+
+      <!-- Lista de Professores -->
+      <table style="width:100%;border-collapse:collapse;font-size:8px;">
+        <thead>
+          <tr style="background:#F0FDFA;border-bottom:2px solid #D1FAF4;">
+            <th style="padding:5px 8px;text-align:left;font-size:7px;color:#4A7C75;text-transform:uppercase;letter-spacing:0.5px;font-weight:700;">Professor</th>
+            <th style="padding:5px 8px;text-align:left;font-size:7px;color:#4A7C75;text-transform:uppercase;letter-spacing:0.5px;font-weight:700;">CPF</th>
+            <th style="padding:5px 8px;text-align:left;font-size:7px;color:#4A7C75;text-transform:uppercase;letter-spacing:0.5px;font-weight:700;">Segmento</th>
+            <th style="padding:5px 8px;text-align:center;font-size:7px;color:#4A7C75;text-transform:uppercase;letter-spacing:0.5px;font-weight:700;">Valor/h</th>
+            <th style="padding:5px 8px;text-align:center;font-size:7px;color:#4A7C75;text-transform:uppercase;letter-spacing:0.5px;font-weight:700;">Horas</th>
+            <th style="padding:5px 8px;text-align:right;font-size:7px;color:#4A7C75;text-transform:uppercase;letter-spacing:0.5px;font-weight:700;">Valor a Receber</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${byTeacher.map(({teacher, acts}, i) => {
+            const rate = calcTeacherRate(teacher);
+            const hrs = acts.reduce((s,a) => s+a.hours, 0);
+            const val = rate * hrs;
+            return `
+            <tr style="${i%2===1?'background:#F8FFFE':'background:#fff'};border-bottom:1px solid #E2E8F0;">
+              <td style="padding:6px 8px;"><strong>${teacher.name}</strong></td>
+              <td style="padding:6px 8px;color:#4A7C75;">${teacher.cpf}</td>
+              <td style="padding:6px 8px;">${teacher.segments.join(', ')}</td>
+              <td style="padding:6px 8px;text-align:center;color:#4A7C75;">${fmtBRL(rate)}</td>
+              <td style="padding:6px 8px;text-align:center;font-weight:700;">${fmtHrs(hrs)}h</td>
+              <td style="padding:6px 8px;text-align:right;font-weight:800;font-size:9px;color:#0F9A8A;">${fmtBRL(val)}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+        <tfoot>
+          <tr style="background:#F0FDFA;border-top:2px solid #D1FAF4;">
+            <td colspan="4" style="padding:6px 8px;font-weight:700;">Total Geral</td>
+            <td style="padding:6px 8px;text-align:center;font-weight:800;">${fmtHrs(totalHrs)}h</td>
+            <td style="padding:6px 8px;text-align:right;font-weight:900;font-size:10px;color:#0F9A8A;">${fmtBRL(totalVal)}</td>
+          </tr>
+        </tfoot>
+      </table>
+
+      <!-- Assinaturas -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:60px;margin-top:36px;">
+        <div style="text-align:center;">
+          <div style="border-top:1.5px solid #1E3A35;padding-top:6px;font-size:7px;color:#4A7C75;">Coordenação Pedagógica</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="border-top:1.5px solid #1E3A35;padding-top:6px;font-size:7px;color:#4A7C75;">Departamento Pessoal</div>
+        </div>
+      </div>
+    </div>`;
+
+  document.getElementById('relatorio-gerado').innerHTML = html;
+  document.getElementById('relatorio-step1').style.display = 'none';
+  document.getElementById('relatorio-step2').style.display = '';
+}
+
+function voltarSelecao() {
+  document.getElementById('relatorio-step1').style.display = '';
+  document.getElementById('relatorio-step2').style.display = 'none';
+}
+
+async function changePassword() {
+  const current = document.getElementById('cfg-pass-current').value;
+  const newPass = document.getElementById('cfg-pass-new').value;
+  const confirm = document.getElementById('cfg-pass-confirm').value;
+  const msg = document.getElementById('cfg-pass-msg');
+
+  const currentHash = await hashSHA256(current);
+  if (currentHash !== state.coordPasswordHash) {
+    msg.textContent = '⚠️ Senha atual incorreta.';
+    msg.style.color = 'var(--danger)'; msg.style.background = 'var(--danger-bg)'; msg.style.border = '1px solid #FECACA';
+    msg.style.display = 'block'; return;
+  }
+  if (newPass.length < 6) {
+    msg.textContent = '⚠️ A nova senha deve ter ao menos 6 caracteres.';
+    msg.style.color = 'var(--danger)'; msg.style.background = 'var(--danger-bg)'; msg.style.border = '1px solid #FECACA';
+    msg.style.display = 'block'; return;
+  }
+  if (newPass !== confirm) {
+    msg.textContent = '⚠️ A confirmação não confere com a nova senha.';
+    msg.style.color = 'var(--danger)'; msg.style.background = 'var(--danger-bg)'; msg.style.border = '1px solid #FECACA';
+    msg.style.display = 'block'; return;
+  }
+  state.coordPasswordHash = await hashSHA256(newPass);
+  msg.textContent = '✅ Senha alterada com sucesso!';
+  msg.style.color = '#065F46'; msg.style.background = 'var(--success-bg)'; msg.style.border = '1px solid #A7F3D0';
+  msg.style.display = 'block';
+  ['cfg-pass-current','cfg-pass-new','cfg-pass-confirm'].forEach(id => document.getElementById(id).value = '');
+  setTimeout(() => msg.style.display = 'none', 3000);
+}
+
+function renderActivityTypesList() {
+  const list = document.getElementById('cfg-types-list');
+  if (!state.activityTypes.length) {
+    list.innerHTML = '<div style="color:var(--text3);font-size:13px;">Nenhum tipo cadastrado.</div>';
+    return;
+  }
+  list.innerHTML = state.activityTypes.map((t, i) => `
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);">
+      <span style="font-size:20px;">${t.emoji}</span>
+      <span style="flex:1;font-size:14px;font-weight:500;">${t.name}</span>
+      <button class="btn btn-danger btn-xs" onclick="removeActivityType(${i})">🗑 Remover</button>
+    </div>`).join('');
+}
+
+function addActivityType() {
+  const emoji = document.getElementById('cfg-type-emoji').value.trim() || '📌';
+  const name = document.getElementById('cfg-type-name').value.trim();
+  if (!name) { showToast('Digite o nome do tipo.', 'error'); return; }
+  if (state.activityTypes.find(t => t.name.toLowerCase() === name.toLowerCase())) {
+    showToast('Tipo já existe.', 'error'); return;
+  }
+  state.activityTypes.push({ name, emoji });
+  document.getElementById('cfg-type-emoji').value = '';
+  document.getElementById('cfg-type-name').value = '';
+  renderActivityTypesList();
+  refreshActivityTypeSelect();
+  showToast('Tipo adicionado com sucesso!');
+}
+
+function removeActivityType(index) {
+  const type = state.activityTypes[index];
+  if (!confirm(`Remover o tipo "${type.name}"?`)) return;
+  state.activityTypes.splice(index, 1);
+  renderActivityTypesList();
+  refreshActivityTypeSelect();
+  showToast('Tipo removido.');
+}
+
+function refreshActivityTypeSelect() {
+  const sel = document.getElementById('m-a-type');
+  if (sel) {
+    sel.innerHTML = state.activityTypes.map(t => `<option value="${t.name}">${t.emoji} ${t.name}</option>`).join('');
+  }
+}
+
+// ══════════════════════════════════
+// INIT — PWA
+// ══════════════════════════════════
+
+// Registra Service Worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').then((reg) => {
+      console.log('[PWA] SW registrado:', reg.scope);
+
+      // Notifica quando há atualização disponível
+      reg.addEventListener('updatefound', () => {
+        const newWorker = reg.installing;
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            window._pendingSW = newWorker;
+            document.getElementById('sw-update-toast').classList.add('show');
+          }
+        });
+      });
+    }).catch(err => console.warn('[PWA] SW falhou:', err));
+
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      window.location.reload();
+    });
+  });
+}
+
+function swApplyUpdate() {
+  if (window._pendingSW) {
+    window._pendingSW.postMessage({ type: 'SKIP_WAITING' });
+  }
+  document.getElementById('sw-update-toast').classList.remove('show');
+}
+
+// Detecta install prompt (Android/Chrome)
+let _deferredInstall = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  _deferredInstall = e;
+  // Mostra banner apenas se não foi dispensado antes
+  if (!localStorage.getItem('pwaInstallDismissed')) {
+    setTimeout(() => document.getElementById('pwa-install-banner').classList.add('show'), 2000);
+  }
+});
+
+window.addEventListener('appinstalled', () => {
+  document.getElementById('pwa-install-banner').classList.remove('show');
+  _deferredInstall = null;
+  showToast('App instalado com sucesso! 🎉');
+});
+
+async function pwaInstall() {
+  document.getElementById('pwa-install-banner').classList.remove('show');
+  if (_deferredInstall) {
+    _deferredInstall.prompt();
+    const { outcome } = await _deferredInstall.userChoice;
+    _deferredInstall = null;
+  }
+}
+
+function pwaDismiss() {
+  document.getElementById('pwa-install-banner').classList.remove('show');
+  localStorage.setItem('pwaInstallDismissed', '1');
+}
+
+// Monitora conexão
+function updateOnlineStatus() {
+  const bar = document.getElementById('offline-bar');
+  if (navigator.onLine) {
+    bar.classList.remove('show');
+  } else {
+    bar.classList.add('show');
+  }
+}
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+updateOnlineStatus();
+
+// ── Patch: auto-save após mutações de estado
+// Intercepta as funções que modificam o estado
+const _origSaveTeacher = typeof saveTeacher === 'function' ? saveTeacher : null;
+const _origSaveActivity = typeof saveActivity === 'function' ? saveActivity : null;
+
+// Wrap mutation functions to auto-save
+['saveTeacher','saveActivity','doConfirm','enviarComprovante','aprovarAtividade',
+ 'reprovarAtividade','changePassword','addActivityType','removeActivityType'].forEach(fn => {
+  if (typeof window[fn] === 'function') {
+    const orig = window[fn];
+    window[fn] = function(...args) {
+      const result = orig.apply(this, args);
+      if (result && typeof result.then === 'function') {
+        return result.then(r => { saveState(); return r; });
+      }
+      saveState();
+      return result;
+    };
+  }
+});
+
+// Init app
+populateTeacherSelect();
+refreshActivityTypeSelect();
+setDate('t-date');
+setDate('c-date');
+
+// Handle deep links (shortcuts PWA)
+const hash = location.hash;
+if (hash === '#teacher') {
+  setTimeout(() => showPage('login-teacher'), 100);
+} else if (hash === '#coord') {
+  setTimeout(() => showPage('login-coord'), 100);
+}
+</script>
+</body>
+</html>
