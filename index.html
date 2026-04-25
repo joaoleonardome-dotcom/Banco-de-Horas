@@ -1521,16 +1521,58 @@
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<script>
+<script type="module">
+// ══════════════════════════════════════════════════════
+// FIREBASE — Banco de Horas Arena
+// ══════════════════════════════════════════════════════
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import {
+  getFirestore, doc, collection,
+  getDocs, setDoc, deleteDoc, writeBatch
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyA6sOzdkeF71gcSvigzNfSsoeJwIwl2QO4",
+  authDomain: "banco-de-dados-c2e1e.firebaseapp.com",
+  projectId: "banco-de-dados-c2e1e",
+  storageBucket: "banco-de-dados-c2e1e.firebasestorage.app",
+  messagingSenderId: "469877628312",
+  appId: "1:469877628312:web:64f2c36a30675108931fed"
+};
+
+const firebaseApp = initializeApp(firebaseConfig);
+const db = getFirestore(firebaseApp);
+
+// ── helpers Firebase ──
+async function fbSaveTeacher(teacher) {
+  const { id, ...data } = teacher;
+  await setDoc(doc(db, 'teachers', String(id)), data);
+}
+async function fbDeleteTeacher(id) {
+  await deleteDoc(doc(db, 'teachers', String(id)));
+}
+async function fbSaveActivity(activity) {
+  const { id, ...data } = activity;
+  // comprovante em base64 pode ser grande — salva normalmente no Firestore
+  await setDoc(doc(db, 'activities', String(id)), data);
+}
+async function fbDeleteActivity(id) {
+  await deleteDoc(doc(db, 'activities', String(id)));
+}
+async function fbSaveConfig() {
+  await setDoc(doc(db, 'config', 'global'), {
+    coordPasswordHash: state.coordPasswordHash,
+    hourlyRates: state.hourlyRates,
+    activityTypes: state.activityTypes,
+    nextTeacherId: state.nextTeacherId,
+    nextActivityId: state.nextActivityId,
+  });
+}
+
 // ══════════════════════════════════
-// STATE
+// STATE — agora persistido no Firebase
 // ══════════════════════════════════
-// ═══════════════════════════════════════════════════
-// PERSISTÊNCIA LOCAL (localStorage)
-// Quando o banco de dados for integrado, substitua
-// loadState/saveState pelas chamadas à API.
-// ═══════════════════════════════════════════════════
-const STORAGE_KEY = 'bancoHoras_v1';
+const STORAGE_KEY = 'bancoHoras_v1'; // mantido apenas para migração
 
 const DEFAULT_STATE = {
   teachers: [
@@ -1565,34 +1607,49 @@ const DEFAULT_STATE = {
   ],
 };
 
-function loadState() {
+async function loadState() {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (!saved) return JSON.parse(JSON.stringify(DEFAULT_STATE));
-    const parsed = JSON.parse(saved);
-    // Mescla com defaults para garantir que novos campos existam
-    return {
-      ...JSON.parse(JSON.stringify(DEFAULT_STATE)),
-      ...parsed,
-      currentTeacher: null,   // nunca persiste sessão
-      confirmActivityId: null,
-    };
+    const base = JSON.parse(JSON.stringify(DEFAULT_STATE));
+
+    // Config global (senha, taxas, tipos, contadores)
+    try {
+      const configSnap = await getDocs(collection(db, 'config'));
+      configSnap.forEach(d => {
+        if (d.id === 'global') Object.assign(base, d.data());
+      });
+    } catch(e) { console.warn('Config não encontrada, usando defaults.', e); }
+
+    // Professores
+    try {
+      const teachersSnap = await getDocs(collection(db, 'teachers'));
+      if (!teachersSnap.empty) {
+        base.teachers = [];
+        teachersSnap.forEach(d => base.teachers.push({ id: Number(d.id), ...d.data() }));
+      }
+    } catch(e) { console.warn('Erro ao carregar professores.', e); }
+
+    // Atividades
+    try {
+      const activitiesSnap = await getDocs(collection(db, 'activities'));
+      if (!activitiesSnap.empty) {
+        base.activities = [];
+        activitiesSnap.forEach(d => base.activities.push({ id: Number(d.id), ...d.data() }));
+      }
+    } catch(e) { console.warn('Erro ao carregar atividades.', e); }
+
+    base.currentTeacher = null;
+    base.confirmActivityId = null;
+    return base;
   } catch(e) {
-    console.warn('Erro ao carregar estado:', e);
+    console.warn('Erro geral ao carregar estado:', e);
     return JSON.parse(JSON.stringify(DEFAULT_STATE));
   }
 }
 
-function saveState() {
-  try {
-    const toSave = { ...state, currentTeacher: null, confirmActivityId: null };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
-  } catch(e) {
-    console.warn('Erro ao salvar estado:', e);
-  }
-}
+// saveState agora é no-op — cada função salva diretamente no Firebase
+function saveState() { /* Firebase: salvo diretamente em cada operação */ }
 
-let state = loadState();
+let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
 
 // ══════════════════════════════════
 // NAVIGATION
@@ -1906,7 +1963,7 @@ function promptConfirm(id) {
   openModal('modal-confirm');
 }
 
-function doConfirm() {
+async function doConfirm() {
   const a = state.activities.find(x => x.id === state.confirmActivityId);
   if (a) { a.status = 'aguardando_comprovante'; }
   closeModal('modal-confirm');
@@ -1914,6 +1971,7 @@ function doConfirm() {
   renderTeacherActivities();
   renderTeacherHistory();
   showToast('Presença confirmada! Agora envie o comprovante.');
+  try { if (a) await fbSaveActivity(a); } catch(e) { console.error('Firebase doConfirm:', e); }
 }
 
 // ══════════════════════════════════
@@ -1965,7 +2023,7 @@ function removePreview() {
   document.getElementById('comp-file-input').value = '';
 }
 
-function enviarComprovante() {
+async function enviarComprovante() {
   if (!state._pendingComprovante) { showToast('Selecione uma imagem.', 'error'); return; }
   const a = state.activities.find(x => x.id === state.confirmActivityId);
   if (a) {
@@ -1979,6 +2037,7 @@ function enviarComprovante() {
   renderTeacherActivities();
   renderTeacherHistory();
   showToast('Comprovante enviado! Aguarde a análise da coordenação.');
+  try { if (a) await fbSaveActivity(a); } catch(e) { console.error('Firebase enviarComprovante:', e); }
 }
 
 
@@ -2085,8 +2144,10 @@ function renderTeachersTable(search='') {
     </tr>`).join('');
 }
 
-function deleteTeacher(id) {
+async function deleteTeacher(id) {
   if (!confirm('Remover este professor?')) return;
+  // Remove atividades do professor também no Firebase
+  const activsToDelete = state.activities.filter(a => a.teacherId === id);
   state.teachers = state.teachers.filter(t => t.id !== id);
   state.activities = state.activities.filter(a => a.teacherId !== id);
   renderTeachersTable();
@@ -2095,6 +2156,11 @@ function deleteTeacher(id) {
   populateTeacherSelect();
   updateAnaliseBadge();
   showToast('Professor removido.');
+  try {
+    await fbDeleteTeacher(id);
+    for (const a of activsToDelete) await fbDeleteActivity(a.id);
+    await fbSaveConfig();
+  } catch(e) { console.error('Erro ao remover professor no Firebase:', e); }
 }
 
 // ══════════════════════════════════
@@ -2163,7 +2229,7 @@ function renderActivitiesTable() {
       </tr>`;}).join('');
 }
 
-function confirmActivity(id) {
+async function confirmActivity(id) {
   const a = state.activities.find(x => x.id === id);
   if (a) a.status = 'aguardando_comprovante';
   renderActivitiesTable();
@@ -2171,9 +2237,10 @@ function confirmActivity(id) {
   renderRelatorio();
   updateAnaliseBadge();
   showToast('Presença confirmada! Aguardando comprovante do professor.');
+  try { if (a) await fbSaveActivity(a); } catch(e) { console.error('Firebase confirmActivity:', e); }
 }
 
-function deleteActivity(id) {
+async function deleteActivity(id) {
   if (!confirm('Remover esta atividade?')) return;
   state.activities = state.activities.filter(a => a.id !== id);
   renderActivitiesTable();
@@ -2181,6 +2248,7 @@ function deleteActivity(id) {
   renderRelatorio();
   updateAnaliseBadge();
   showToast('Atividade removida.');
+  try { await fbDeleteActivity(id); } catch(e) { console.error('Firebase deleteActivity:', e); }
 }
 
 function updateAnaliseBadge() {
@@ -2205,7 +2273,7 @@ function abrirAnalise(id) {
   openModal('modal-analisar');
 }
 
-function aprovarAtividade() {
+async function aprovarAtividade() {
   const a = state.activities.find(x => x.id === state.confirmActivityId);
   if (a) {
     a.status = 'aprovado';
@@ -2216,16 +2284,16 @@ function aprovarAtividade() {
   renderCoordDashboard();
   renderRelatorio();
   updateAnaliseBadge();
-  // Atualiza painel do professor se estiver logado e for a atividade dele
   if (state.currentTeacher && a && a.teacherId === state.currentTeacher.id) {
     renderTeacherDashboard();
     renderTeacherActivities();
     renderTeacherHistory();
   }
   showToast('Comprovante aprovado! Horas contabilizadas.');
+  try { if (a) await fbSaveActivity(a); } catch(e) { console.error('Firebase aprovarAtividade:', e); }
 }
 
-function reprovarAtividade() {
+async function reprovarAtividade() {
   const obs = document.getElementById('anal-obs').value.trim();
   if (!obs) { showToast('Informe o motivo da reprovação na observação.', 'error'); return; }
   const a = state.activities.find(x => x.id === state.confirmActivityId);
@@ -2238,13 +2306,13 @@ function reprovarAtividade() {
   renderCoordDashboard();
   renderRelatorio();
   updateAnaliseBadge();
-  // Atualiza painel do professor se estiver logado e for a atividade dele
   if (state.currentTeacher && a && a.teacherId === state.currentTeacher.id) {
     renderTeacherDashboard();
     renderTeacherActivities();
     renderTeacherHistory();
   }
   showToast('Comprovante reprovado. Professor será notificado para reenvio.');
+  try { if (a) await fbSaveActivity(a); } catch(e) { console.error('Firebase reprovarAtividade:', e); }
 }
 
 // ══════════════════════════════════
@@ -2282,7 +2350,7 @@ function openEditTeacherModal(id) {
   openModal('modal-teacher');
 }
 
-function saveTeacher() {
+async function saveTeacher() {
   const name = document.getElementById('m-t-name').value.trim();
   const cpf = document.getElementById('m-t-cpf').value.trim();
   const dob = document.getElementById('m-t-dob').value;
@@ -2292,13 +2360,11 @@ function saveTeacher() {
   if (!name || !cpf || !dob || !segments.length) { showToast('Preencha todos os campos e selecione ao menos um segmento.', 'error'); return; }
 
   if (editId) {
-    // Modo edição
     const id = parseInt(editId);
     const duplicate = state.teachers.find(t => t.cpf === cpf && t.id !== id);
     if (duplicate) { showToast('CPF já cadastrado em outro professor.', 'error'); return; }
     const t = state.teachers.find(x => x.id === id);
     if (t) { t.name = name; t.cpf = cpf; t.dob = dob; t.segments = segments; }
-    // Atualiza currentTeacher se for o mesmo que está logado
     if (state.currentTeacher && state.currentTeacher.id === id) {
       state.currentTeacher = t;
       document.getElementById('t-avatar').textContent = t.name.split(' ').map(w=>w[0]).slice(0,2).join('');
@@ -2311,16 +2377,21 @@ function saveTeacher() {
     renderRelatorio();
     populateTeacherSelect();
     showToast('Professor atualizado com sucesso!');
+    try { if (t) await fbSaveTeacher(t); } catch(e) { console.error('Firebase saveTeacher edit:', e); }
   } else {
-    // Modo criação
     if (state.teachers.find(t => t.cpf === cpf)) { showToast('CPF já cadastrado.', 'error'); return; }
-    state.teachers.push({ id: state.nextTeacherId++, name, cpf, dob, segments });
+    const newTeacher = { id: state.nextTeacherId++, name, cpf, dob, segments };
+    state.teachers.push(newTeacher);
     closeModal('modal-teacher');
     renderTeachersTable();
     renderCoordDashboard();
     renderRelatorio();
     populateTeacherSelect();
     showToast('Professor cadastrado com sucesso!');
+    try {
+      await fbSaveTeacher(newTeacher);
+      await fbSaveConfig();
+    } catch(e) { console.error('Firebase saveTeacher new:', e); }
   }
 }
 
@@ -2369,7 +2440,7 @@ function populateTeacherSelect() {
   }
 }
 
-function saveActivity() {
+async function saveActivity() {
   const title = document.getElementById('m-a-title').value.trim();
   const type = document.getElementById('m-a-type').value;
   const hours = parseFloat(document.getElementById('m-a-hours').value);
@@ -2382,7 +2453,6 @@ function saveActivity() {
   if (!title || isNaN(hours) || hours <= 0 || !date || !teacherId) { showToast('Preencha todos os campos obrigatórios corretamente.', 'error'); return; }
 
   if (editId) {
-    // Modo edição
     const a = state.activities.find(x => x.id === parseInt(editId));
     if (a) { a.title = title; a.type = type; a.hours = hours; a.date = date; a.time = time; a.teacherId = teacherId; a.desc = desc; }
     closeModal('modal-activity');
@@ -2391,15 +2461,20 @@ function saveActivity() {
     renderRelatorio();
     updateAnaliseBadge();
     showToast('Atividade atualizada com sucesso!');
+    try { if (a) await fbSaveActivity(a); } catch(e) { console.error('Firebase saveActivity edit:', e); }
   } else {
-    // Modo criação
-    state.activities.push({ id: state.nextActivityId++, title, type, teacherId, date, time, hours, desc, status: 'pendente', comprovante: null, obs: null });
+    const newActivity = { id: state.nextActivityId++, title, type, teacherId, date, time, hours, desc, status: 'pendente', comprovante: null, obs: null };
+    state.activities.push(newActivity);
     closeModal('modal-activity');
     renderActivitiesTable();
     renderCoordDashboard();
     renderRelatorio();
     updateAnaliseBadge();
     showToast('Atividade cadastrada!');
+    try {
+      await fbSaveActivity(newActivity);
+      await fbSaveConfig();
+    } catch(e) { console.error('Firebase saveActivity new:', e); }
   }
 }
 
@@ -2421,7 +2496,7 @@ function renderHourlyRates() {
   });
 }
 
-function saveHourlyRates() {
+async function saveHourlyRates() {
   const fi  = parseFloat(document.getElementById('cfg-rate-fi').value)  || 0;
   const fii = parseFloat(document.getElementById('cfg-rate-fii').value) || 0;
   const em  = parseFloat(document.getElementById('cfg-rate-em').value)  || 0;
@@ -2435,6 +2510,7 @@ function saveHourlyRates() {
   setTimeout(() => msg.style.display = 'none', 3000);
   showToast('Valores por hora aula atualizados!');
   renderRelatorio();
+  try { await fbSaveConfig(); } catch(e) { console.error('Firebase saveHourlyRates:', e); }
 }
 
 // calcula o valor hora do professor com base nos seus segmentos e nas tarifas configuradas
@@ -2747,6 +2823,7 @@ async function changePassword() {
   msg.style.display = 'block';
   ['cfg-pass-current','cfg-pass-new','cfg-pass-confirm'].forEach(id => document.getElementById(id).value = '');
   setTimeout(() => msg.style.display = 'none', 3000);
+  try { await fbSaveConfig(); } catch(e) { console.error('Firebase changePassword:', e); }
 }
 
 function renderActivityTypesList() {
@@ -2763,7 +2840,7 @@ function renderActivityTypesList() {
     </div>`).join('');
 }
 
-function addActivityType() {
+async function addActivityType() {
   const emoji = document.getElementById('cfg-type-emoji').value.trim() || '📌';
   const name = document.getElementById('cfg-type-name').value.trim();
   if (!name) { showToast('Digite o nome do tipo.', 'error'); return; }
@@ -2776,15 +2853,17 @@ function addActivityType() {
   renderActivityTypesList();
   refreshActivityTypeSelect();
   showToast('Tipo adicionado com sucesso!');
+  try { await fbSaveConfig(); } catch(e) { console.error('Firebase addActivityType:', e); }
 }
 
-function removeActivityType(index) {
+async function removeActivityType(index) {
   const type = state.activityTypes[index];
   if (!confirm(`Remover o tipo "${type.name}"?`)) return;
   state.activityTypes.splice(index, 1);
   renderActivityTypesList();
   refreshActivityTypeSelect();
   showToast('Tipo removido.');
+  try { await fbSaveConfig(); } catch(e) { console.error('Firebase removeActivityType:', e); }
 }
 
 function refreshActivityTypeSelect() {
@@ -2873,40 +2952,80 @@ window.addEventListener('online', updateOnlineStatus);
 window.addEventListener('offline', updateOnlineStatus);
 updateOnlineStatus();
 
-// ── Patch: auto-save após mutações de estado
-// Intercepta as funções que modificam o estado
-const _origSaveTeacher = typeof saveTeacher === 'function' ? saveTeacher : null;
-const _origSaveActivity = typeof saveActivity === 'function' ? saveActivity : null;
-
-// Wrap mutation functions to auto-save
-['saveTeacher','saveActivity','doConfirm','enviarComprovante','aprovarAtividade',
- 'reprovarAtividade','changePassword','addActivityType','removeActivityType'].forEach(fn => {
-  if (typeof window[fn] === 'function') {
-    const orig = window[fn];
-    window[fn] = function(...args) {
-      const result = orig.apply(this, args);
-      if (result && typeof result.then === 'function') {
-        return result.then(r => { saveState(); return r; });
-      }
-      saveState();
-      return result;
-    };
-  }
+// ══════════════════════════════════
+// EXPOR FUNÇÕES AO ESCOPO GLOBAL
+// (necessário pois type="module" isola o escopo)
+// ══════════════════════════════════
+Object.assign(window, {
+  showPage, teacherNav, coordNav,
+  loginTeacher, loginCoord, logout,
+  saveTeacher, openAddTeacherModal, openEditTeacherModal, deleteTeacher,
+  saveActivity, openAddModal, openEditActivityModal, deleteActivity,
+  confirmActivity, doConfirm,
+  promptConfirm, openComprovante, enviarComprovante, removePreview,
+  handleFileSelect, handleDrop,
+  abrirAnalise, aprovarAtividade, reprovarAtividade,
+  renderTeacherActivities, renderTeachersTable, renderActivitiesTable,
+  changePassword, saveHourlyRates,
+  addActivityType, removeActivityType,
+  maskCPF, toggleCheck, openModal, closeModal,
+  voltarSelecao, gerarRelatorio,
+  swApplyUpdate, pwaInstall, pwaDismiss,
+  populateTeacherSelect, refreshActivityTypeSelect,
 });
 
-// Init app
-populateTeacherSelect();
-refreshActivityTypeSelect();
-setDate('t-date');
-setDate('c-date');
+// ══════════════════════════════════
+// INIT — carrega dados do Firebase
+// ══════════════════════════════════
+(async () => {
+  // Mostra tela de carregamento
+  const landing = document.getElementById('landing');
+  const loadingDiv = document.createElement('div');
+  loadingDiv.id = 'firebase-loading';
+  loadingDiv.style.cssText = `
+    position:fixed;inset:0;background:linear-gradient(135deg,#E6FFFA,#F0FDFA);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    z-index:9999;font-family:'Segoe UI',system-ui,sans-serif;
+  `;
+  loadingDiv.innerHTML = `
+    <div style="width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg,#2DD4BF,#0F9A8A);
+      display:flex;align-items:center;justify-content:center;font-size:26px;margin-bottom:16px;
+      box-shadow:0 4px 16px rgba(45,212,191,0.4);">⏱</div>
+    <div style="font-size:18px;font-weight:800;color:#1E3A35;margin-bottom:8px;">Banco de Horas</div>
+    <div style="font-size:13px;color:#4A7C75;">Carregando dados...</div>
+    <div style="margin-top:20px;width:200px;height:4px;background:#D1FAF4;border-radius:50px;overflow:hidden;">
+      <div style="height:100%;width:60%;background:linear-gradient(90deg,#2DD4BF,#0F9A8A);border-radius:50px;
+        animation:loadBar 1.2s ease-in-out infinite alternate;"></div>
+    </div>
+    <style>@keyframes loadBar{from{width:20%}to{width:90%}}</style>
+  `;
+  document.body.appendChild(loadingDiv);
 
-// Handle deep links (shortcuts PWA)
-const hash = location.hash;
-if (hash === '#teacher') {
-  setTimeout(() => showPage('login-teacher'), 100);
-} else if (hash === '#coord') {
-  setTimeout(() => showPage('login-coord'), 100);
-}
+  try {
+    state = await loadState();
+  } catch(e) {
+    console.error('Falha ao carregar Firebase, usando dados locais:', e);
+    state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+  }
+
+  // Remove tela de carregamento
+  loadingDiv.remove();
+
+  // Inicializa UI
+  populateTeacherSelect();
+  refreshActivityTypeSelect();
+  setDate('t-date');
+  setDate('c-date');
+  updateOnlineStatus();
+
+  // Handle deep links (shortcuts PWA)
+  const hash = location.hash;
+  if (hash === '#teacher') {
+    setTimeout(() => showPage('login-teacher'), 100);
+  } else if (hash === '#coord') {
+    setTimeout(() => showPage('login-coord'), 100);
+  }
+})();
 </script>
 </body>
 </html>
