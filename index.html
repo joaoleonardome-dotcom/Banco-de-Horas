@@ -640,7 +640,7 @@
 
   /* RESPONSIVE tweaks */
   @media (max-width: 768px) {
-    .sidebar { transform: translateX(-100%); }
+    .sidebar { display: none; }
     .main-content { margin-left: 0; }
     .grid-2, .grid-3 { grid-template-columns: 1fr; }
     .stats-grid { grid-template-columns: 1fr 1fr; }
@@ -690,160 +690,244 @@
     .no-print { display: none !important; }
   }
 
-  /* ═══════════════════════════════════
-     PWA / MOBILE IMPROVEMENTS
-  ═══════════════════════════════════ */
-  
-  /* Safe area for notch/home indicator */
+  /* ═══════════════════════════════════════════
+     PWA / MOBILE — Layout Vertical Otimizado
+  ═══════════════════════════════════════════ */
+
   body {
-    padding-env: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     -webkit-font-smoothing: antialiased;
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
     overscroll-behavior: none;
   }
 
-  /* Prevent zoom on input focus (iOS) */
-  input, select, textarea {
-    font-size: 16px !important;
-  }
+  input, select, textarea { font-size: 16px !important; }
   .btn { font-size: 15px !important; }
 
-  /* Mobile: sidebar vira bottom nav */
+  /* ── BOTTOM NAV (visível só no mobile) ── */
+  .bottom-nav {
+    display: none;
+  }
+
   @media (max-width: 768px) {
+
+    /* Oculta sidebar lateral completamente */
+    .sidebar { display: none !important; }
+
+    /* App ocupa tela toda */
     #app-teacher, #app-coord {
       flex-direction: column;
+      min-height: 100dvh;
     }
-    .sidebar {
-      width: 100%;
-      min-height: unset;
-      height: auto;
-      position: fixed;
-      top: auto;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      flex-direction: row;
-      align-items: center;
-      border-right: none;
-      border-top: 1.5px solid var(--border);
-      z-index: 200;
-      padding: 0;
-      padding-bottom: env(safe-area-inset-bottom);
-      box-shadow: 0 -4px 16px rgba(0,0,0,0.08);
-    }
-    .sidebar-logo, .sidebar-user, .sidebar-footer {
-      display: none !important;
-    }
-    .sidebar-nav {
-      flex: 1;
-      overflow: hidden;
-    }
-    .nav-section {
-      display: flex;
-      flex-direction: row;
-      padding: 0;
-      gap: 0;
-    }
-    .nav-label { display: none; }
-    .nav-item {
-      flex: 1;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      gap: 3px;
-      padding: 8px 4px 10px;
-      border-radius: 0;
-      border-bottom: none;
-      font-size: 10px;
-      text-align: center;
-      min-height: 56px;
-    }
-    .nav-item .nav-icon {
-      font-size: 20px;
-      margin: 0;
-    }
-    .nav-item.active {
-      background: var(--cyan-xlight);
-      color: var(--cyan-dark);
-      border-top: 2px solid var(--cyan);
-    }
-    .nav-badge {
-      position: absolute;
-      top: 6px;
-      right: 50%;
-      transform: translateX(60%);
-      font-size: 9px;
-      padding: 1px 5px;
-    }
+
     .main-content {
       margin-left: 0 !important;
       padding-bottom: calc(72px + env(safe-area-inset-bottom));
+      min-height: 100dvh;
     }
+
+    /* Topbar mobile: compacta com avatar */
     .topbar {
-      padding: 14px 16px 10px;
-      padding-top: calc(14px + env(safe-area-inset-top));
+      padding: 12px 16px 10px;
+      padding-top: calc(12px + env(safe-area-inset-top));
       position: sticky;
       top: 0;
       z-index: 100;
       background: var(--bg);
       border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
     }
-    .content-area {
-      padding: 12px 14px;
+    .topbar h1 {
+      font-size: 17px !important;
+      font-weight: 700;
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
+    .topbar-right { display: none; }
+
+    /* Mobile topbar user chip */
+    .topbar-user-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--surface2);
+      border-radius: 20px;
+      padding: 4px 10px 4px 4px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text2);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .topbar-user-chip .chip-avatar {
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      background: var(--cyan-light);
+      color: var(--cyan-dark);
+      font-size: 11px;
+      font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* Content area mais compacto */
+    .content-area { padding: 12px 12px; }
+
+    /* Landing page vertical */
     .landing-cards {
       flex-direction: column;
       align-items: center;
-      gap: 16px;
+      gap: 14px;
       padding: 0 16px;
     }
     .access-card {
       width: 100%;
-      max-width: 360px;
+      max-width: 400px;
       padding: 28px 24px;
     }
+
+    /* Login box */
     .login-box {
-      padding: 32px 20px;
-      border-radius: var(--radius);
-      margin: 16px;
+      padding: 28px 20px;
+      margin: 12px 16px;
       width: calc(100% - 32px);
     }
+
+    /* Modais sobem do bottom */
+    .modal-overlay { align-items: flex-end; }
     .modal {
       border-radius: var(--radius) var(--radius) 0 0;
-      max-height: 92vh;
+      max-height: 94dvh;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
     }
-    .modal-overlay {
-      align-items: flex-end;
-    }
-    /* Larger touch targets */
+
+    /* Touch targets maiores */
     .btn { min-height: 48px; }
-    .btn-sm { min-height: 38px; }
-    .nav-item { position: relative; }
-    /* Better table on mobile */
+    .btn-sm { min-height: 40px; }
+
+    /* Tabelas com scroll horizontal */
     .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    table { min-width: 500px; }
-    /* Stats grid 2 cols on mobile */
+    table { min-width: 480px; }
+
+    /* Grids responsivos */
     .stats-grid { grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
-    .grid-2 { grid-template-columns: 1fr !important; }
-    /* Hours hero */
+    .grid-2, .grid-3 { grid-template-columns: 1fr !important; }
+
+    /* Hero de horas */
     .hours-hero { flex-direction: column; gap: 8px; }
-    .big-num { font-size: 48px !important; }
+    .big-num { font-size: 44px !important; }
+
+    /* Cards sem margin excessiva */
+    .card { padding: 16px; }
+    .card-header { margin-bottom: 14px; }
+
+    /* BOTTOM NAV — o coração da navegação mobile */
+    .bottom-nav {
+      display: flex;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: calc(64px + env(safe-area-inset-bottom));
+      padding-bottom: env(safe-area-inset-bottom);
+      background: var(--bg);
+      border-top: 1px solid var(--border);
+      box-shadow: 0 -2px 16px rgba(0,0,0,0.07);
+      z-index: 200;
+      align-items: stretch;
+    }
+    .bottom-nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      padding: 8px 4px;
+      cursor: pointer;
+      position: relative;
+      transition: background 0.15s;
+      -webkit-tap-highlight-color: transparent;
+      border: none;
+      background: transparent;
+    }
+    .bottom-nav-item:active { background: var(--surface2); }
+    .bottom-nav-item .bn-icon {
+      font-size: 22px;
+      line-height: 1;
+      transition: transform 0.15s;
+    }
+    .bottom-nav-item.active .bn-icon { transform: scale(1.1); }
+    .bottom-nav-item .bn-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text3);
+      line-height: 1;
+      letter-spacing: 0.2px;
+    }
+    .bottom-nav-item.active .bn-label { color: var(--cyan-dark); }
+    .bottom-nav-item.active::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 20%; right: 20%;
+      height: 2.5px;
+      background: var(--cyan);
+      border-radius: 0 0 3px 3px;
+    }
+    .bn-badge {
+      position: absolute;
+      top: 6px;
+      left: 50%;
+      transform: translateX(4px);
+      background: #EF4444;
+      color: #fff;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 10px;
+      min-width: 16px;
+      text-align: center;
+      line-height: 14px;
+    }
+
+    /* Botão sair no topbar mobile */
+    .mobile-logout-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: var(--surface2);
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+      flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .mobile-logout-btn:active { background: var(--danger-bg); }
+
+    /* Relatório payroll */
+    .payroll-teacher-header { flex-wrap: wrap; gap: 10px; }
+    .payroll-total-box { min-width: 120px; }
+
+    /* Filtros de status em select */
+    #t-filter-status { width: 100%; margin-top: 8px; }
+
+    /* Upload area */
+    .upload-area { padding: 20px 16px; }
   }
 
   /* PWA Install Banner */
   #pwa-install-banner {
     display: none;
     position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    bottom: 0; left: 0; right: 0;
     background: var(--surface);
     border-top: 1.5px solid var(--border);
-    padding: 14px 16px;
-    padding-bottom: calc(14px + env(safe-area-inset-bottom));
+    padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
     z-index: 9999;
     box-shadow: 0 -4px 16px rgba(0,0,0,0.12);
     flex-direction: row;
@@ -864,60 +948,31 @@
   }
   #pwa-install-banner .btn-later {
     background: transparent; border: none;
-    color: var(--text3); font-size: 12px; cursor: pointer;
-    padding: 4px 8px;
+    color: var(--text3); font-size: 12px; cursor: pointer; padding: 4px 8px;
   }
 
   /* Offline indicator */
   #offline-bar {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    background: #F87171;
-    color: #fff;
-    text-align: center;
-    font-size: 13px;
-    font-weight: 600;
-    padding: 8px;
-    z-index: 10000;
+    display: none; position: fixed;
+    top: 0; left: 0; right: 0;
+    background: #F87171; color: #fff;
+    text-align: center; font-size: 13px; font-weight: 600;
+    padding: 8px; z-index: 10000;
   }
   #offline-bar.show { display: block; }
 
-  /* Update available toast */
+  /* Update toast */
   #sw-update-toast {
-    display: none;
-    position: fixed;
-    bottom: 80px;
-    left: 50%;
+    display: none; position: fixed;
+    bottom: 80px; left: 50%;
     transform: translateX(-50%);
-    background: var(--text);
-    color: #fff;
-    padding: 12px 20px;
-    border-radius: 50px;
-    font-size: 13px;
-    z-index: 9998;
-    cursor: pointer;
-    white-space: nowrap;
+    background: var(--text); color: #fff;
+    padding: 12px 20px; border-radius: 50px;
+    font-size: 13px; z-index: 9998;
+    cursor: pointer; white-space: nowrap;
     box-shadow: var(--shadow-lg);
   }
   #sw-update-toast.show { display: flex; align-items: center; gap: 8px; }
-
-
-  .nav-label-text { display: inline; }
-  @media (max-width: 768px) {
-    .nav-label-text {
-      display: block;
-      font-size: 9px;
-      line-height: 1.2;
-      margin-top: 2px;
-      max-width: 60px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-  }
 </style>
 </head>
 <body>
@@ -1076,6 +1131,11 @@
       <div class="topbar-right">
         <span class="topbar-date" id="t-date"></span>
       </div>
+      <div class="topbar-user-chip" id="t-topbar-chip" style="display:none;">
+        <div class="chip-avatar" id="t-chip-avatar">?</div>
+        <span id="t-chip-name">Professor</span>
+      </div>
+      <button class="mobile-logout-btn" onclick="logout()" title="Sair" style="display:none;" id="t-topbar-logout">🚪</button>
     </div>
     <div class="content-area">
       <!-- DASHBOARD PANEL -->
@@ -1132,6 +1192,26 @@
       </div>
     </div>
   </div>
+  <!-- BOTTOM NAV PROFESSOR (mobile) -->
+  <nav class="bottom-nav" id="t-bottom-nav">
+    <button class="bottom-nav-item active" id="t-bn-dashboard" onclick="teacherNav('dashboard',this);bnActive('t','dashboard')">
+      <span class="bn-icon">📊</span>
+      <span class="bn-label">Início</span>
+    </button>
+    <button class="bottom-nav-item" id="t-bn-atividades" onclick="teacherNav('atividades',this);bnActive('t','atividades')">
+      <span class="bn-icon">📋</span>
+      <span class="bn-label">Atividades</span>
+      <span class="bn-badge" id="t-bn-badge" style="display:none;">0</span>
+    </button>
+    <button class="bottom-nav-item" id="t-bn-historico" onclick="teacherNav('historico',this);bnActive('t','historico')">
+      <span class="bn-icon">🕐</span>
+      <span class="bn-label">Histórico</span>
+    </button>
+    <button class="bottom-nav-item" onclick="logout()" style="flex:0.8;">
+      <span class="bn-icon">🚪</span>
+      <span class="bn-label">Sair</span>
+    </button>
+  </nav>
 </div>
 
 <!-- ══════════ APP COORDENAÇÃO ══════════ -->
@@ -1175,11 +1255,15 @@
   </aside>
   <div class="main-content">
     <div class="topbar">
-      <h1 id="c-page-title">Dashboard Geral</h1>
+      <h1 id="c-page-title">Dashboard</h1>
       <div class="topbar-right">
         <span class="topbar-date" id="c-date"></span>
-        
       </div>
+      <div class="topbar-user-chip" id="c-topbar-chip" style="display:none;">
+        <div class="chip-avatar" style="background:var(--surface2);color:var(--text2);">👤</div>
+        <span>Coordenação</span>
+      </div>
+      <button class="mobile-logout-btn" onclick="logout()" title="Sair" style="display:none;" id="c-topbar-logout">🚪</button>
     </div>
     <div class="content-area">
       <!-- DASHBOARD -->
@@ -1375,6 +1459,30 @@
       </div>
     </div>
   </div>
+  <!-- BOTTOM NAV COORDENAÇÃO (mobile) -->
+  <nav class="bottom-nav" id="c-bottom-nav">
+    <button class="bottom-nav-item active" id="c-bn-dashboard" onclick="coordNav('dashboard',this);bnActive('c','dashboard')">
+      <span class="bn-icon">📊</span>
+      <span class="bn-label">Início</span>
+    </button>
+    <button class="bottom-nav-item" id="c-bn-professores" onclick="coordNav('professores',this);bnActive('c','professores')">
+      <span class="bn-icon">👥</span>
+      <span class="bn-label">Professores</span>
+    </button>
+    <button class="bottom-nav-item" id="c-bn-atividades" onclick="coordNav('atividades',this);bnActive('c','atividades')">
+      <span class="bn-icon">📋</span>
+      <span class="bn-label">Atividades</span>
+      <span class="bn-badge" id="c-bn-badge" style="display:none;">0</span>
+    </button>
+    <button class="bottom-nav-item" id="c-bn-relatorio" onclick="coordNav('relatorio',this);bnActive('c','relatorio')">
+      <span class="bn-icon">📈</span>
+      <span class="bn-label">Relatório</span>
+    </button>
+    <button class="bottom-nav-item" id="c-bn-config" onclick="coordNav('configuracoes',this);bnActive('c','config')" style="flex:0.8;">
+      <span class="bn-icon">⚙️</span>
+      <span class="bn-label">Config</span>
+    </button>
+  </nav>
 </div>
 
 <!-- ══════════ MODALS ══════════ -->
@@ -1798,22 +1906,35 @@ function showPage(id) {
 
 function teacherNav(panel, el) {
   document.querySelectorAll('#app-teacher .nav-item').forEach(n => n.classList.remove('active'));
-  el.classList.add('active');
+  if (el) el.classList.add('active');
   document.querySelectorAll('#app-teacher .panel').forEach(p => p.classList.remove('active'));
   document.getElementById('t-panel-' + panel).classList.add('active');
-  document.getElementById('t-page-title').textContent = el.textContent.trim().replace(/\d+/g,'').trim();
+  const titles = {dashboard:'Dashboard', atividades:'Minhas Atividades', historico:'Histórico'};
+  document.getElementById('t-page-title').textContent = titles[panel] || panel;
   if (panel === 'atividades') renderTeacherActivities();
   if (panel === 'historico') renderTeacherHistory();
   if (panel === 'dashboard') renderTeacherDashboard();
 }
 
+function bnActive(app, section) {
+  const navId = app === 't' ? 't-bottom-nav' : 'c-bottom-nav';
+  const nav = document.getElementById(navId);
+  if (!nav) return;
+  nav.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
+  const prefix = app === 't' ? 't-bn-' : 'c-bn-';
+  const target = document.getElementById(prefix + section);
+  if (target) target.classList.add('active');
+}
+
 function coordNav(panel, el) {
   document.querySelectorAll('#app-coord .nav-item').forEach(n => n.classList.remove('active'));
-  el.classList.add('active');
+  if (el) el.classList.add('active');
   document.querySelectorAll('#app-coord .panel').forEach(p => p.classList.remove('active'));
   document.getElementById('c-panel-' + panel).classList.add('active');
-  document.getElementById('c-page-title').textContent = el.textContent.trim().replace(/\d+/,'').trim();
-  document.getElementById('c-topbar-action').style.display = panel === 'atividades' ? 'flex' : 'none';
+  const titles = {dashboard:'Dashboard', professores:'Professores', atividades:'Atividades', relatorio:'Relatório', configuracoes:'Configurações'};
+  document.getElementById('c-page-title').textContent = titles[panel] || panel;
+  const topbarAction = document.getElementById('c-topbar-action');
+  if (topbarAction) topbarAction.style.display = panel === 'atividades' ? 'flex' : 'none';
   if (panel === 'dashboard') renderCoordDashboard();
   if (panel === 'professores') renderTeachersTable();
   if (panel === 'atividades') renderActivitiesTable();
@@ -1844,9 +1965,16 @@ function loginTeacher() {
   }
   document.getElementById('teacher-error').style.display = 'none';
   state.currentTeacher = teacher;
-  document.getElementById('t-avatar').textContent = teacher.name.split(' ').map(w=>w[0]).slice(0,2).join('');
-  document.getElementById('t-sidebar-name').textContent = teacher.name.split(' ').slice(0,2).join(' ');
+  const initials = teacher.name.split(' ').map(w=>w[0]).slice(0,2).join('');
+  const firstName = teacher.name.split(' ').slice(0,2).join(' ');
+  document.getElementById('t-avatar').textContent = initials;
+  document.getElementById('t-sidebar-name').textContent = firstName;
   document.getElementById('t-sidebar-seg').textContent = teacher.segments.join(', ');
+  // Mobile: mostra chip e logout no topbar
+  const chip = document.getElementById('t-topbar-chip');
+  const logoutBtn = document.getElementById('t-topbar-logout');
+  if (chip) { chip.style.display = 'flex'; document.getElementById('t-chip-avatar').textContent = initials; document.getElementById('t-chip-name').textContent = firstName.split(' ')[0]; }
+  if (logoutBtn) logoutBtn.style.display = 'flex';
   setDate('t-date');
   renderTeacherDashboard();
   renderTeacherActivities();
@@ -1872,6 +2000,11 @@ async function loginCoord() {
     renderRelatorio();
     renderConfigPanel();
     updateAnaliseBadge();
+    // Mobile: mostra chip e logout no topbar
+    const chip = document.getElementById('c-topbar-chip');
+    const logoutBtn = document.getElementById('c-topbar-logout');
+    if (chip) chip.style.display = 'flex';
+    if (logoutBtn) logoutBtn.style.display = 'flex';
     showPage('app-coord');
   } else {
     document.getElementById('coord-error').style.display = 'block';
@@ -1894,14 +2027,28 @@ function logout() {
   document.getElementById('t-total-hours').innerHTML = '0 <span>hrs</span>';
   const badgeEl = document.getElementById('t-pending-badge');
   if (badgeEl) { badgeEl.textContent = ''; badgeEl.style.display = 'none'; }
+  // Reset bottom nav badges
+  const bnBadgeT = document.getElementById('t-bn-badge');
+  if (bnBadgeT) { bnBadgeT.textContent = ''; bnBadgeT.style.display = 'none'; }
+  const bnBadgeC = document.getElementById('c-bn-badge');
+  if (bnBadgeC) { bnBadgeC.textContent = ''; bnBadgeC.style.display = 'none'; }
+  // Reset mobile topbar chips
+  ['t-topbar-chip','t-topbar-logout','c-topbar-chip','c-topbar-logout'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.style.display = 'none';
+  });
   // Reset teacher nav
   document.querySelectorAll('#app-teacher .nav-item').forEach((n,i) => i===0 ? n.classList.add('active') : n.classList.remove('active'));
   document.querySelectorAll('#app-teacher .panel').forEach((p,i) => i===0 ? p.classList.add('active') : p.classList.remove('active'));
   document.getElementById('t-page-title').textContent = 'Dashboard';
+  // Reset bottom navs
+  const tBn = document.getElementById('t-bottom-nav');
+  if (tBn) { tBn.querySelectorAll('.bottom-nav-item').forEach((b,i) => i===0 ? b.classList.add('active') : b.classList.remove('active')); }
+  const cBn = document.getElementById('c-bottom-nav');
+  if (cBn) { cBn.querySelectorAll('.bottom-nav-item').forEach((b,i) => i===0 ? b.classList.add('active') : b.classList.remove('active')); }
   // Reset coord nav
   document.querySelectorAll('#app-coord .nav-item').forEach((n,i) => i===0 ? n.classList.add('active') : n.classList.remove('active'));
   document.querySelectorAll('#app-coord .panel').forEach((p,i) => i===0 ? p.classList.add('active') : p.classList.remove('active'));
-  document.getElementById('c-page-title').textContent = 'Dashboard Geral';
+  document.getElementById('c-page-title').textContent = 'Dashboard';
   showPage('landing');
 }
 
@@ -2403,9 +2550,17 @@ async function deleteActivity(id) {
 function updateAnaliseBadge() {
   const count = state.activities.filter(a => a.status === 'em_analise').length;
   const badge = document.getElementById('c-analise-badge');
-  if (badge) {
-    badge.textContent = count;
-    badge.style.display = count > 0 ? 'inline-flex' : 'none';
+  if (badge) { badge.textContent = count; badge.style.display = count > 0 ? 'inline-flex' : 'none'; }
+  // Sincroniza badge do bottom nav mobile
+  const bnBadge = document.getElementById('c-bn-badge');
+  if (bnBadge) { bnBadge.textContent = count; bnBadge.style.display = count > 0 ? 'inline-flex' : 'none'; }
+  // Badge do professor (pendentes dele)
+  if (state.currentTeacher) {
+    const tCount = state.activities.filter(a => a.teacherId === state.currentTeacher.id && a.status === 'pendente').length;
+    const tBn = document.getElementById('t-bn-badge');
+    if (tBn) { tBn.textContent = tCount; tBn.style.display = tCount > 0 ? 'inline-flex' : 'none'; }
+    const tBadge = document.getElementById('t-pending-badge');
+    if (tBadge) { tBadge.textContent = tCount; tBadge.style.display = tCount > 0 ? 'inline-flex' : 'none'; }
   }
 }
 
@@ -3107,7 +3262,7 @@ updateOnlineStatus();
 // ══════════════════════════════════
 Object.assign(window, {
   showPage, teacherNav, coordNav,
-  dobAdvance, loginTeacher, loginCoord, logout,
+  dobAdvance, bnActive, loginTeacher, loginCoord, logout,
   saveTeacher, openAddTeacherModal, openEditTeacherModal, deleteTeacher,
   saveActivity, openAddModal, openEditActivityModal, deleteActivity,
   confirmActivity, doConfirm,
