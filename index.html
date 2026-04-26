@@ -520,6 +520,7 @@
   .seg-fi { background: #DBEAFE; color: #1E40AF; }
   .seg-fii { background: #FEF3C7; color: #92400E; }
   .seg-em { background: #F3E8FF; color: #6B21A8; }
+  .seg-ei { background: #DCFCE7; color: #166534; }
 
   /* SEARCH */
   .search-input {
@@ -1164,7 +1165,7 @@
           </div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Atividade</th><th>Data</th><th>Horas</th><th>Tipo</th><th>Status</th></tr></thead>
+              <thead><tr><th>Atividade</th><th>Data</th><th>Horas</th><th>Tipo</th><th>Segmento</th><th>Status</th></tr></thead>
               <tbody id="t-history-body"></tbody>
             </table>
           </div>
@@ -1293,7 +1294,7 @@
           </div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Atividade</th><th>Tipo</th><th>Professor</th><th>Data</th><th>Horas</th><th>Status</th><th>Confirmação</th><th>Ações</th></tr></thead>
+              <thead><tr><th>Atividade</th><th>Tipo</th><th>Segmento</th><th>Professor</th><th>Data</th><th>Horas</th><th>Status</th><th>Confirmação</th><th>Ações</th></tr></thead>
               <tbody id="c-activities-body"></tbody>
             </table>
           </div>
@@ -1366,7 +1367,16 @@
           <div id="cfg-rates-msg" style="display:none;padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;margin-bottom:16px;"></div>
           <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:20px;">
             <div style="display:flex;align-items:center;gap:12px;">
-              <span class="seg-tag seg-fi" style="font-size:12px;padding:5px 12px;min-width:100px;text-align:center;">Fundamental I</span>
+              <span class="seg-tag seg-ei" style="font-size:12px;padding:5px 12px;min-width:120px;text-align:center;">Educação Infantil</span>
+              <div style="flex:1;position:relative;">
+                <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text2);font-size:14px;font-weight:600;">R$</span>
+                <input type="number" id="cfg-rate-ei" min="0" step="0.01" placeholder="0,00"
+                  style="width:100%;padding:10px 12px 10px 36px;border:1.5px solid var(--border2);border-radius:var(--radius-sm);font-size:14px;outline:none;font-family:inherit;"
+                  onfocus="this.style.borderColor='var(--cyan)'" onblur="this.style.borderColor='var(--border2)'">
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <span class="seg-tag seg-fi" style="font-size:12px;padding:5px 12px;min-width:120px;text-align:center;">Fundamental I</span>
               <div style="flex:1;position:relative;">
                 <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text2);font-size:14px;font-weight:600;">R$</span>
                 <input type="number" id="cfg-rate-fi" min="0" step="0.01" placeholder="0,00"
@@ -1375,7 +1385,7 @@
               </div>
             </div>
             <div style="display:flex;align-items:center;gap:12px;">
-              <span class="seg-tag seg-fii" style="font-size:12px;padding:5px 12px;min-width:100px;text-align:center;">Fundamental II</span>
+              <span class="seg-tag seg-fii" style="font-size:12px;padding:5px 12px;min-width:120px;text-align:center;">Fundamental II</span>
               <div style="flex:1;position:relative;">
                 <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text2);font-size:14px;font-weight:600;">R$</span>
                 <input type="number" id="cfg-rate-fii" min="0" step="0.01" placeholder="0,00"
@@ -1384,7 +1394,7 @@
               </div>
             </div>
             <div style="display:flex;align-items:center;gap:12px;">
-              <span class="seg-tag seg-em" style="font-size:12px;padding:5px 12px;min-width:100px;text-align:center;">Ensino Médio</span>
+              <span class="seg-tag seg-em" style="font-size:12px;padding:5px 12px;min-width:120px;text-align:center;">Ensino Médio</span>
               <div style="flex:1;position:relative;">
                 <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text2);font-size:14px;font-weight:600;">R$</span>
                 <input type="number" id="cfg-rate-em" min="0" step="0.01" placeholder="0,00"
@@ -1497,13 +1507,16 @@
       <label>Segmento(s) de Atuação</label>
       <div class="checkbox-group">
         <label class="checkbox-item" onclick="toggleCheck(event,this)">
-          <input type="checkbox" value="Fundamental I"> Fundamental I
+          <input type="checkbox" value="Educação Infantil"><span class="seg-tag seg-ei">E.I</span> Educação Infantil
         </label>
         <label class="checkbox-item" onclick="toggleCheck(event,this)">
-          <input type="checkbox" value="Fundamental II"> Fundamental II
+          <input type="checkbox" value="Fundamental I"><span class="seg-tag seg-fi">F.I</span> Fundamental I
         </label>
         <label class="checkbox-item" onclick="toggleCheck(event,this)">
-          <input type="checkbox" value="Ensino Médio"> Ensino Médio
+          <input type="checkbox" value="Fundamental II"><span class="seg-tag seg-fii">F.II</span> Fundamental II
+        </label>
+        <label class="checkbox-item" onclick="toggleCheck(event,this)">
+          <input type="checkbox" value="Ensino Médio"><span class="seg-tag seg-em">E.M</span> Ensino Médio
         </label>
       </div>
     </div>
@@ -1549,9 +1562,16 @@
     </div>
     <div class="form-group">
       <label>Professor Responsável</label>
-      <select id="m-a-teacher">
+      <select id="m-a-teacher" onchange="onTeacherChange()">
         <option value="">Selecione o professor...</option>
       </select>
+    </div>
+    <div class="form-group" id="m-a-segment-group">
+      <label>Segmento da Atividade <span style="color:var(--danger);">*</span></label>
+      <select id="m-a-segment">
+        <option value="">Selecione o segmento...</option>
+      </select>
+      <small style="color:var(--text2);font-size:11px;margin-top:4px;display:block;">Define o valor/hora a ser pago por esta atividade.</small>
     </div>
     <div class="form-group">
       <label>Descrição / Observações</label>
@@ -1713,6 +1733,7 @@ const DEFAULT_STATE = {
   nextActivityId: 6,
   coordPasswordHash: '42917e39f26c6bb0aa976c1935910bd58bf9953a45e574390ba9381bf5c2e64f',
   hourlyRates: {
+    'Educação Infantil': 0,
     'Fundamental I': 0,
     'Fundamental II': 0,
     'Ensino Médio': 0,
@@ -2129,6 +2150,7 @@ function typeBg(type) {
 }
 
 function segTag(seg) {
+  if (seg === 'Educação Infantil') return `<span class="seg-tag seg-ei">E.I</span>`;
   if (seg === 'Fundamental I')  return `<span class="seg-tag seg-fi">F.I</span>`;
   if (seg === 'Fundamental II') return `<span class="seg-tag seg-fii">F.II</span>`;
   if (seg === 'Ensino Médio')   return `<span class="seg-tag seg-em">E.M</span>`;
@@ -2239,6 +2261,7 @@ function activityCard(a, showActions=false) {
           <span>🕐 ${a.time || '--'}</span>
           <span>⏱ ${a.hours}h</span>
           <span>🏷 ${a.type}</span>
+          ${a.segment ? `<span>${segTag(a.segment)}</span>` : ''}
         </div>
         ${a.desc ? `<div style="font-size:12px;color:var(--text3);margin-top:4px;">${a.desc}</div>` : ''}
         ${obsHtml}
@@ -2255,7 +2278,7 @@ function renderTeacherActivities() {
   const filter = document.getElementById('t-filter-status').value;
   let acts = getTeacherActivities(t.id);
   if (filter) acts = acts.filter(a => a.status === filter);
-  acts.sort((a,b) => b.date.localeCompare(a.date));
+  acts.sort((a,b) => a.date.localeCompare(b.date));
   const el = document.getElementById('t-all-activities');
   if (!acts.length) {
     el.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><p>Nenhuma atividade encontrada.</p></div>`;
@@ -2266,10 +2289,10 @@ function renderTeacherActivities() {
 
 function renderTeacherHistory() {
   const t = state.currentTeacher;
-  const acts = getTeacherActivities(t.id).sort((a,b) => b.date.localeCompare(a.date));
+  const acts = getTeacherActivities(t.id).sort((a,b) => a.date.localeCompare(b.date));
   const tbody = document.getElementById('t-history-body');
   if (!acts.length) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:32px;">Nenhum registro.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:32px;">Nenhum registro.</td></tr>';
     return;
   }
   tbody.innerHTML = acts.map(a => `
@@ -2278,6 +2301,7 @@ function renderTeacherHistory() {
       <td>${formatDate(a.date)}</td>
       <td>${a.hours}h</td>
       <td><span class="badge-pill badge-blue">${a.type}</span></td>
+      <td>${a.segment ? segTag(a.segment) : '<span style="color:var(--text3);font-size:12px;">—</span>'}</td>
       <td>${statusBadgeHtml(a.status)}</td>
     </tr>`).join('');
 }
@@ -2478,7 +2502,7 @@ function renderCoordDashboard() {
   `;
 
   // Horas por segmento
-  const segs = ['Fundamental I','Fundamental II','Ensino Médio'];
+  const segs = ['Educação Infantil','Fundamental I','Fundamental II','Ensino Médio'];
   const segHours = segs.map(seg => {
     const teachers = state.teachers.filter(t => t.segments.includes(seg));
     const hrs = teachers.reduce((s,t) => s + getTeacherHours(t.id), 0);
@@ -2525,7 +2549,7 @@ function renderCoordDashboard() {
 // TEACHERS TABLE
 // ══════════════════════════════════
 function renderTeachersTable(search='') {
-  let teachers = state.teachers;
+  let teachers = [...state.teachers].sort((a,b) => a.name.localeCompare(b.name, 'pt-BR'));
   if (search) teachers = teachers.filter(t => t.name.toLowerCase().includes(search.toLowerCase()) || t.cpf.includes(search));
   const tbody = document.getElementById('c-teachers-body');
   if (!teachers.length) {
@@ -2595,10 +2619,10 @@ function renderActivitiesTable() {
   if (filter) acts = acts.filter(a => a.teacherId == filter);
   if (statusFilter) acts = acts.filter(a => a.status === statusFilter);
   if (monthFilter) acts = acts.filter(a => a.date.slice(0,7) === monthFilter);
-  acts = [...acts].sort((a,b) => b.date.localeCompare(a.date));
+  acts = [...acts].sort((a,b) => a.date.localeCompare(b.date));
   const tbody = document.getElementById('c-activities-body');
   if (!acts.length) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:32px;">Nenhuma atividade cadastrada.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:32px;">Nenhuma atividade cadastrada.</td></tr>';
     return;
   }
   tbody.innerHTML = acts.map(a => {
@@ -2621,6 +2645,7 @@ function renderActivitiesTable() {
       <tr>
         <td><strong>${a.title}</strong>${a.desc ? `<br><span style="font-size:11px;color:var(--text3);">${a.desc.slice(0,50)}${a.desc.length>50?'...':''}</span>` : ''}</td>
         <td><span class="badge-pill badge-blue">${a.type}</span></td>
+        <td>${a.segment ? segTag(a.segment) : '<span style="color:var(--text3);font-size:12px;">—</span>'}</td>
         <td>${t ? t.name.split(' ').slice(0,2).join(' ') : '—'}</td>
         <td>${formatDate(a.date)} ${a.time ? '· '+a.time : ''}</td>
         <td><strong>${a.hours}h</strong></td>
@@ -2828,6 +2853,8 @@ function openAddModal() {
   document.getElementById('m-a-time').value = '';
   document.getElementById('m-a-desc').value = '';
   populateTeacherSelect();
+  refreshActivityTypeSelect();
+  onTeacherChange(); // popula segmentos com todos disponíveis
   openModal('modal-activity');
 }
 
@@ -2842,18 +2869,50 @@ function openEditActivityModal(id) {
   document.getElementById('m-a-date').value = a.date;
   document.getElementById('m-a-time').value = a.time || '';
   document.getElementById('m-a-desc').value = a.desc || '';
-  // Popula ambos os selects ANTES de definir os valores
+  // Popula selects ANTES de definir os valores
   populateTeacherSelect();
   refreshActivityTypeSelect();
-  // Define valores com string para garantir match correto
   document.getElementById('m-a-teacher').value = String(a.teacherId);
   const typeSelect = document.getElementById('m-a-type');
   if (typeSelect) typeSelect.value = a.type;
+  // Popula e restaura o segmento
+  onTeacherChange();
+  if (a.segment) document.getElementById('m-a-segment').value = a.segment;
   openModal('modal-activity');
 }
 
+function onTeacherChange() {
+  const teacherId = parseInt(document.getElementById('m-a-teacher').value);
+  const teacher = state.teachers.find(t => t.id === teacherId);
+  const sel = document.getElementById('m-a-segment');
+  const allSegs = ['Educação Infantil', 'Fundamental I', 'Fundamental II', 'Ensino Médio'];
+  const segs = (teacher && teacher.segments.length) ? teacher.segments : allSegs;
+
+  sel.innerHTML = '<option value="">Selecione o segmento...</option>' +
+    segs.map(s => {
+      const rate = state.hourlyRates[s] || 0;
+      const rateLabel = rate > 0 ? ` — ${fmtBRL(rate)}/h` : ' — valor não definido';
+      return `<option value="${s}">${segTagText(s)}${rateLabel}</option>`;
+    }).join('');
+
+  // Se professor tem só um segmento, seleciona automaticamente
+  if (teacher && teacher.segments.length === 1) sel.value = teacher.segments[0];
+}
+
+// Retorna o nome abreviado + completo para o select de segmento
+function segTagText(seg) {
+  const map = {
+    'Educação Infantil': 'E.I – Educação Infantil',
+    'Fundamental I':     'F.I – Fundamental I',
+    'Fundamental II':    'F.II – Fundamental II',
+    'Ensino Médio':      'E.M – Ensino Médio',
+  };
+  return map[seg] || seg;
+}
+
 function populateTeacherSelect() {
-  const opts = state.teachers.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+  const sorted = [...state.teachers].sort((a,b) => a.name.localeCompare(b.name, 'pt-BR'));
+  const opts = sorted.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
   document.getElementById('m-a-teacher').innerHTML = '<option value="">Selecione o professor...</option>' + opts;
 
   const filterSel = document.getElementById('c-filter-teacher');
@@ -2871,20 +2930,21 @@ async function saveActivity() {
   const date = document.getElementById('m-a-date').value;
   const time = document.getElementById('m-a-time').value;
   const teacherId = parseInt(document.getElementById('m-a-teacher').value);
+  const segment = document.getElementById('m-a-segment').value;
   const desc = document.getElementById('m-a-desc').value.trim();
   const editId = document.getElementById('m-a-id').value;
 
   if (!title || !type || isNaN(hours) || hours <= 0 || !date || !teacherId) { showToast('Preencha todos os campos obrigatórios corretamente.', 'error'); return; }
+  if (!segment) { showToast('Selecione o segmento da atividade.', 'error'); return; }
 
   if (editId) {
     const a = state.activities.find(x => x.id === parseInt(editId));
-    if (a) { a.title = title; a.type = type; a.hours = hours; a.date = date; a.time = time; a.teacherId = teacherId; a.desc = desc; }
+    if (a) { a.title = title; a.type = type; a.hours = hours; a.date = date; a.time = time; a.teacherId = teacherId; a.segment = segment; a.desc = desc; }
     closeModal('modal-activity');
     renderActivitiesTable();
     renderCoordDashboard();
     renderRelatorio();
     updateAnaliseBadge();
-    // Atualiza visão do professor se ele estiver logado e a atividade for dele
     if (state.currentTeacher && a && a.teacherId === state.currentTeacher.id) {
       renderTeacherDashboard();
       renderTeacherActivities();
@@ -2893,7 +2953,7 @@ async function saveActivity() {
     showToast('Atividade atualizada com sucesso!');
     try { if (a) await fbSaveActivity(a); } catch(e) { console.error('Firebase saveActivity edit:', e); }
   } else {
-    const newActivity = { id: state.nextActivityId++, title, type, teacherId, date, time, hours, desc, status: 'pendente', comprovante: null, obs: null };
+    const newActivity = { id: state.nextActivityId++, title, type, teacherId, segment, date, time, hours, desc, status: 'pendente', comprovante: null, obs: null };
     state.activities.push(newActivity);
     closeModal('modal-activity');
     renderActivitiesTable();
@@ -2919,7 +2979,12 @@ function renderConfigPanel() {
 }
 
 function renderHourlyRates() {
-  const map = { 'Fundamental I': 'cfg-rate-fi', 'Fundamental II': 'cfg-rate-fii', 'Ensino Médio': 'cfg-rate-em' };
+  const map = {
+    'Educação Infantil': 'cfg-rate-ei',
+    'Fundamental I':     'cfg-rate-fi',
+    'Fundamental II':    'cfg-rate-fii',
+    'Ensino Médio':      'cfg-rate-em'
+  };
   Object.entries(map).forEach(([seg, id]) => {
     const v = state.hourlyRates[seg] || 0;
     document.getElementById(id).value = v > 0 ? v : '';
@@ -2927,12 +2992,14 @@ function renderHourlyRates() {
 }
 
 async function saveHourlyRates() {
+  const ei  = parseFloat(document.getElementById('cfg-rate-ei').value)  || 0;
   const fi  = parseFloat(document.getElementById('cfg-rate-fi').value)  || 0;
   const fii = parseFloat(document.getElementById('cfg-rate-fii').value) || 0;
   const em  = parseFloat(document.getElementById('cfg-rate-em').value)  || 0;
-  state.hourlyRates['Fundamental I']  = fi;
-  state.hourlyRates['Fundamental II'] = fii;
-  state.hourlyRates['Ensino Médio']   = em;
+  state.hourlyRates['Educação Infantil'] = ei;
+  state.hourlyRates['Fundamental I']     = fi;
+  state.hourlyRates['Fundamental II']    = fii;
+  state.hourlyRates['Ensino Médio']      = em;
   const msg = document.getElementById('cfg-rates-msg');
   msg.textContent = '✅ Valores salvos com sucesso!';
   msg.style.background = 'var(--success-bg)'; msg.style.color = '#065F46'; msg.style.border = '1px solid #A7F3D0';
@@ -2945,9 +3012,18 @@ async function saveHourlyRates() {
 
 // calcula o valor hora do professor com base nos seus segmentos e nas tarifas configuradas
 function calcTeacherRate(teacher) {
+  // Mantido para compatibilidade — usa o maior valor entre os segmentos do professor
   if (!teacher.segments || !teacher.segments.length) return 0;
   const rates = teacher.segments.map(s => state.hourlyRates[s] || 0);
   return Math.max(0, ...rates);
+}
+
+function getActivityRate(activity) {
+  // Usa o segmento específico da atividade para calcular o valor correto
+  if (activity.segment) return state.hourlyRates[activity.segment] || 0;
+  // Fallback para atividades antigas sem segmento: usa taxa do professor
+  const teacher = getTeacher(activity.teacherId);
+  return teacher ? calcTeacherRate(teacher) : 0;
 }
 
 function fmtBRL(v) {
@@ -3024,12 +3100,16 @@ function renderRelatorio() {
     html += `<div class="rate-warning">⚠️ Nenhum valor de hora aula configurado. Vá em <strong>Configurações → Valor da Hora Aula</strong> para definir os valores antes de gerar o relatório.</div>`;
   }
 
-  // Month selector
+  // Month selector — preserva mês selecionado se já existir
+  const prevSel = document.getElementById('payroll-month-sel');
+  const prevKey = prevSel ? prevSel.value : defaultKey;
+  const selectedKey = months.includes(prevKey) ? prevKey : (months.includes(defaultKey) ? defaultKey : months[0]);
+
   html += `
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:24px;flex-wrap:wrap;">
       <label style="font-weight:600;font-size:14px;">📅 Selecionar mês de referência:</label>
       <select id="payroll-month-sel" onchange="renderPayrollMonth()" style="padding:9px 14px;border:1.5px solid var(--cyan);border-radius:var(--radius-sm);font-size:14px;font-weight:600;color:var(--cyan-dark);outline:none;cursor:pointer;">
-        ${months.map(k => `<option value="${k}" ${k === defaultKey ? 'selected' : ''}>${monthLabel(k)}</option>`).join('')}
+        ${months.map(k => `<option value="${k}" ${k === selectedKey ? 'selected' : ''}>${monthLabel(k)}</option>`).join('')}
       </select>
       <div style="display:flex;gap:8px;margin-left:auto;">
         <button class="btn btn-sm btn-outline" onclick="selectAllPayroll(true)">✅ Marcar todas</button>
@@ -3041,9 +3121,6 @@ function renderRelatorio() {
   `;
 
   list.innerHTML = html;
-
-  // Store months data for renderPayrollMonth
-  state._payrollMonths = byMonth;
   renderPayrollMonth();
 }
 
@@ -3051,7 +3128,9 @@ function renderPayrollMonth() {
   const sel = document.getElementById('payroll-month-sel');
   if (!sel) return;
   const key = sel.value;
-  const acts = (state._payrollMonths || {})[key] || [];
+
+  // Recalcula direto do estado — não depende de _payrollMonths que pode estar desatualizado
+  const acts = state.activities.filter(a => a.status === 'aprovado' && a.date.slice(0,7) === key);
   const fmtHrs = h => Number.isInteger(h) ? h : h.toFixed(1);
 
   if (!acts.length) {
@@ -3067,23 +3146,24 @@ function renderPayrollMonth() {
 
   let html = '';
   byTeacher.forEach(({ teacher, acts: tActs }) => {
-    const rate = calcTeacherRate(teacher);
     html += `
       <div style="margin-bottom:16px;">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
           <div class="user-avatar" style="font-size:11px;width:32px;height:32px;">${teacher.name.split(' ').map(w=>w[0]).slice(0,2).join('')}</div>
           <strong style="font-size:14px;">${teacher.name}</strong>
           <span style="font-size:12px;color:var(--text2);">${teacher.segments.map(s=>segTag(s)).join('')}</span>
-          ${rate > 0 ? `<span style="font-size:12px;color:var(--cyan-dark);font-weight:600;margin-left:4px;">${fmtBRL(rate)}/h</span>` : `<span style="font-size:12px;color:var(--danger);">⚠️ sem valor</span>`}
         </div>
         ${tActs.map(a => {
+          const rate = getActivityRate(a);
           const val = rate * a.hours;
+          const segLabel = a.segment ? `<span style="font-size:11px;color:var(--text2);"> · ${segTagText(a.segment)}</span>` : '';
           return `
           <div class="act-check-row selected" onclick="togglePayrollRow(this)" data-id="${a.id}">
             <input type="checkbox" checked onclick="event.stopPropagation();this.closest('.act-check-row').classList.toggle('selected',this.checked)">
             <div class="act-info">
               <strong>${a.title}</strong>
-              <span>${formatDate(a.date)}${a.time?' · '+a.time:''} · ${a.hours}h · ${a.type}</span>
+              <span>${formatDate(a.date)}${a.time?' · '+a.time:''} · ${a.hours}h · ${a.type}${rate > 0 ? ' · '+fmtBRL(rate)+'/h' : ''}</span>
+              ${segLabel}
             </div>
             <div class="act-val">${rate > 0 ? fmtBRL(val) : '—'}</div>
           </div>`;
@@ -3129,9 +3209,8 @@ function gerarRelatorio() {
     acts: selectedActs.filter(a => a.teacherId === t.id)
   })).filter(x => x.acts.length > 0);
 
-  const totalVal = byTeacher.reduce((sum, {teacher, acts}) => {
-    const rate = calcTeacherRate(teacher);
-    return sum + acts.reduce((s,a) => s + rate*a.hours, 0);
+  const totalVal = byTeacher.reduce((sum, {acts}) => {
+    return sum + acts.reduce((s,a) => s + getActivityRate(a)*a.hours, 0);
   }, 0);
   const totalHrs = byTeacher.reduce((sum,{acts}) => sum + acts.reduce((s,a)=>s+a.hours,0), 0);
 
@@ -3181,15 +3260,19 @@ function gerarRelatorio() {
         </thead>
         <tbody>
           ${byTeacher.map(({teacher, acts}, i) => {
-            const rate = calcTeacherRate(teacher);
             const hrs = acts.reduce((s,a) => s+a.hours, 0);
-            const val = rate * hrs;
+            const val = acts.reduce((s,a) => s + getActivityRate(a)*a.hours, 0);
+            // Segmentos distintos usados nas atividades deste professor
+            const segsUsados = [...new Set(acts.map(a => a.segment).filter(Boolean))].join(', ') || teacher.segments.join(', ');
+            const rateLabel = acts.length === 1
+              ? fmtBRL(getActivityRate(acts[0])) + '/h'
+              : 'variável por segmento';
             return `
             <tr style="${i%2===1?'background:#F8FFFE':'background:#fff'};border-bottom:1px solid #E2E8F0;">
               <td style="padding:6px 8px;"><strong>${teacher.name}</strong></td>
               <td style="padding:6px 8px;color:#4A7C75;">${teacher.cpf}</td>
-              <td style="padding:6px 8px;">${teacher.segments.join(', ')}</td>
-              <td style="padding:6px 8px;text-align:center;color:#4A7C75;">${fmtBRL(rate)}</td>
+              <td style="padding:6px 8px;">${segsUsados}</td>
+              <td style="padding:6px 8px;text-align:center;color:#4A7C75;">${rateLabel}</td>
               <td style="padding:6px 8px;text-align:center;font-weight:700;">${fmtHrs(hrs)}h</td>
               <td style="padding:6px 8px;text-align:right;font-weight:800;font-size:9px;color:#0F9A8A;">${fmtBRL(val)}</td>
             </tr>`;
