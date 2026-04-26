@@ -1585,7 +1585,7 @@
     <p style="font-weight:700;font-size:15px;margin-bottom:16px;" id="comp-act-name"></p>
     <p style="font-size:13px;color:var(--text2);margin-bottom:14px;">Envie uma foto ou imagem do documento comprobatório (súmula, lista de presença, declaração, etc.).</p>
     <div class="upload-area" id="upload-area" onclick="document.getElementById('comp-file-input').click()" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleDrop(event)">
-      <input type="file" id="comp-file-input" accept="image/*" onchange="handleFileSelect(event)" style="display:none;">
+      <input type="file" id="comp-file-input" accept="image/*" capture="environment" onchange="handleFileSelect(event)" style="display:none;">
       <div class="upload-icon">🖼️</div>
       <p><strong>Clique para selecionar</strong> ou arraste a imagem aqui</p>
       <p style="font-size:11px;margin-top:4px;">JPG, PNG, WEBP — máx. 10MB</p>
@@ -2299,7 +2299,9 @@ function openComprovante(id) {
   document.getElementById('btn-enviar-comp').disabled = true;
   document.getElementById('btn-enviar-comp').textContent = '📤 Enviar Comprovante';
   state._pendingComprovante = null;
-  state._pendingFile = null;
+  state._pendingFile        = null;
+  state._pendingBase64      = null;
+  state._pendingMime        = null;
   openModal('modal-comprovante');
 }
 
@@ -2316,36 +2318,69 @@ function handleDrop(event) {
 }
 
 function processFile(file) {
-  if (file.size > 10 * 1024 * 1024) { showToast('Arquivo muito grande. Máximo 10MB.', 'error'); return; }
-  // Preview local imediato enquanto o upload acontece depois
+  if (!file) return;
+  if (file.size > 15 * 1024 * 1024) { showToast('Arquivo muito grande. Máximo 15MB.', 'error'); return; }
+
   const reader = new FileReader();
   reader.onload = e => {
-    document.getElementById('comp-preview-img').src = e.target.result;
+    const base64 = e.target.result;
+    // Guarda o base64 imediatamente — o File object pode ser invalidado no mobile após câmera
+    state._pendingBase64 = base64;
+    state._pendingMime   = file.type || 'image/jpeg';
+    state._pendingFile   = file; // fallback para browsers que mantêm o File
+
+    document.getElementById('comp-preview-img').src = base64;
     document.getElementById('comp-preview-wrap').style.display = 'block';
+    document.getElementById('btn-enviar-comp').disabled = false;
   };
+  reader.onerror = () => showToast('Erro ao ler o arquivo. Tente novamente.', 'error');
   reader.readAsDataURL(file);
-  state._pendingFile = file;
-  state._pendingComprovante = null;
-  document.getElementById('btn-enviar-comp').disabled = false;
 }
 
 async function uploadToCloudinary(file) {
   const CLOUD_NAME    = 'dufywhkji';
   const UPLOAD_PRESET = 'geoOlympics_unsigned';
   const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
+
+  let blob;
+  try {
+    // Tenta usar o File original primeiro; se falhar (mobile), usa o base64 salvo
+    if (file && file.size > 0) {
+      blob = file;
+    } else {
+      throw new Error('File inválido, usando base64');
+    }
+  } catch {
+    // Reconstrói o blob a partir do base64 guardado (fallback mobile)
+    if (!state._pendingBase64) throw new Error('Nenhuma imagem disponível para upload');
+    const arr = state._pendingBase64.split(',');
+    const mime = arr[0].match(/:(.*?);/)[1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) u8arr[n] = bstr.charCodeAt(n);
+    blob = new Blob([u8arr], { type: mime });
+  }
+
   const formData = new FormData();
-  formData.append('file', file);
+  formData.append('file', blob, 'comprovante.jpg');
   formData.append('upload_preset', UPLOAD_PRESET);
   formData.append('folder', 'comprovantes_arena');
+
   const res = await fetch(url, { method: 'POST', body: formData });
-  if (!res.ok) throw new Error('Falha no upload para o Cloudinary');
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.error?.message || 'Falha no upload para o Cloudinary');
+  }
   const data = await res.json();
   return data.secure_url;
 }
 
 function removePreview() {
   state._pendingComprovante = null;
-  state._pendingFile = null;
+  state._pendingFile        = null;
+  state._pendingBase64      = null;
+  state._pendingMime        = null;
   document.getElementById('comp-preview-img').src = '';
   document.getElementById('comp-preview-wrap').style.display = 'none';
   document.getElementById('btn-enviar-comp').disabled = true;
@@ -2353,7 +2388,7 @@ function removePreview() {
 }
 
 async function enviarComprovante() {
-  if (!state._pendingFile) { showToast('Selecione uma imagem.', 'error'); return; }
+  if (!state._pendingBase64 && !state._pendingFile) { showToast('Selecione uma imagem.', 'error'); return; }
 
   const btnEnviar = document.getElementById('btn-enviar-comp');
   btnEnviar.disabled = true;
@@ -2364,12 +2399,13 @@ async function enviarComprovante() {
 
     const a = state.activities.find(x => x.id === state.confirmActivityId);
     if (a) {
-      a.comprovante = imageUrl; // salva só a URL, não o base64
+      a.comprovante = imageUrl;
       a.status = 'em_analise';
       a.obs = null;
     }
-    state._pendingFile = null;
-    state._pendingComprovante = null;
+    state._pendingFile   = null;
+    state._pendingBase64 = null;
+    state._pendingMime   = null;
 
     closeModal('modal-comprovante');
     renderTeacherDashboard();
