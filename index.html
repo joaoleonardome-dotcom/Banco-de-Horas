@@ -1663,7 +1663,7 @@ async function fbDeleteTeacher(id) {
 }
 async function fbSaveActivity(activity) {
   const { id, ...data } = activity;
-  // comprovante em base64 pode ser grande — salva normalmente no Firestore
+  // comprovante agora é uma URL do Cloudinary (não mais base64)
   await setDoc(doc(db, 'activities', String(id)), data);
 }
 async function fbDeleteActivity(id) {
@@ -1817,10 +1817,12 @@ async function migrateFromLocalStorage() {
       await setDoc(doc(db, 'teachers', String(id)), data);
     }
 
-    // Migra atividades (sem o campo comprovante — pode ser grande demais)
+    // Migra atividades (comprovante agora é URL do Cloudinary, pode migrar normalmente)
     for (const a of (local.activities || [])) {
-      const { id, comprovante, ...data } = a;
-      await setDoc(doc(db, 'activities', String(id)), { ...data, comprovante: null });
+      const { id, ...data } = a;
+      // comprovantes antigos em base64 são descartados na migração (muito grandes pro Firestore)
+      const comprovante = data.comprovante && data.comprovante.startsWith('http') ? data.comprovante : null;
+      await setDoc(doc(db, 'activities', String(id)), { ...data, comprovante });
     }
 
     // Migra config global
@@ -2295,7 +2297,9 @@ function openComprovante(id) {
   document.getElementById('comp-preview-img').src = '';
   document.getElementById('comp-preview-wrap').style.display = 'none';
   document.getElementById('btn-enviar-comp').disabled = true;
+  document.getElementById('btn-enviar-comp').textContent = '📤 Enviar Comprovante';
   state._pendingComprovante = null;
+  state._pendingFile = null;
   openModal('modal-comprovante');
 }
 
@@ -2313,18 +2317,35 @@ function handleDrop(event) {
 
 function processFile(file) {
   if (file.size > 10 * 1024 * 1024) { showToast('Arquivo muito grande. Máximo 10MB.', 'error'); return; }
+  // Preview local imediato enquanto o upload acontece depois
   const reader = new FileReader();
   reader.onload = e => {
-    state._pendingComprovante = e.target.result;
     document.getElementById('comp-preview-img').src = e.target.result;
     document.getElementById('comp-preview-wrap').style.display = 'block';
-    document.getElementById('btn-enviar-comp').disabled = false;
   };
   reader.readAsDataURL(file);
+  state._pendingFile = file;
+  state._pendingComprovante = null;
+  document.getElementById('btn-enviar-comp').disabled = false;
+}
+
+async function uploadToCloudinary(file) {
+  const CLOUD_NAME    = 'dufywhkji';
+  const UPLOAD_PRESET = 'geoOlympics_unsigned';
+  const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', UPLOAD_PRESET);
+  formData.append('folder', 'comprovantes_arena');
+  const res = await fetch(url, { method: 'POST', body: formData });
+  if (!res.ok) throw new Error('Falha no upload para o Cloudinary');
+  const data = await res.json();
+  return data.secure_url;
 }
 
 function removePreview() {
   state._pendingComprovante = null;
+  state._pendingFile = null;
   document.getElementById('comp-preview-img').src = '';
   document.getElementById('comp-preview-wrap').style.display = 'none';
   document.getElementById('btn-enviar-comp').disabled = true;
@@ -2332,20 +2353,37 @@ function removePreview() {
 }
 
 async function enviarComprovante() {
-  if (!state._pendingComprovante) { showToast('Selecione uma imagem.', 'error'); return; }
-  const a = state.activities.find(x => x.id === state.confirmActivityId);
-  if (a) {
-    a.comprovante = state._pendingComprovante;
-    a.status = 'em_analise';
-    a.obs = null;
+  if (!state._pendingFile) { showToast('Selecione uma imagem.', 'error'); return; }
+
+  const btnEnviar = document.getElementById('btn-enviar-comp');
+  btnEnviar.disabled = true;
+  btnEnviar.textContent = '⏳ Enviando...';
+
+  try {
+    const imageUrl = await uploadToCloudinary(state._pendingFile);
+
+    const a = state.activities.find(x => x.id === state.confirmActivityId);
+    if (a) {
+      a.comprovante = imageUrl; // salva só a URL, não o base64
+      a.status = 'em_analise';
+      a.obs = null;
+    }
+    state._pendingFile = null;
+    state._pendingComprovante = null;
+
+    closeModal('modal-comprovante');
+    renderTeacherDashboard();
+    renderTeacherActivities();
+    renderTeacherHistory();
+    showToast('Comprovante enviado! Aguarde a análise da coordenação.');
+    try { if (a) await fbSaveActivity(a); } catch(e) { console.error('Firebase enviarComprovante:', e); }
+
+  } catch (err) {
+    console.error('Cloudinary upload error:', err);
+    showToast('Erro ao enviar imagem. Tente novamente.', 'error');
+    btnEnviar.disabled = false;
+    btnEnviar.textContent = '📤 Enviar Comprovante';
   }
-  state._pendingComprovante = null;
-  closeModal('modal-comprovante');
-  renderTeacherDashboard();
-  renderTeacherActivities();
-  renderTeacherHistory();
-  showToast('Comprovante enviado! Aguarde a análise da coordenação.');
-  try { if (a) await fbSaveActivity(a); } catch(e) { console.error('Firebase enviarComprovante:', e); }
 }
 
 
