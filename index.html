@@ -1621,7 +1621,8 @@
     <p style="font-weight:700;font-size:15px;margin-bottom:4px;" id="anal-act-name"></p>
     <p style="font-size:12px;color:var(--text2);margin-bottom:14px;" id="anal-act-meta"></p>
     <div class="comp-img-wrap">
-      <img id="anal-comp-img" src="" alt="Comprovante enviado pelo professor">
+      <img id="anal-comp-img" src="" alt="Comprovante enviado pelo professor" style="onerror=this.style.display='none'">
+      <div id="anal-no-comprovante" style="display:none;text-align:center;padding:24px;color:var(--text2);font-size:13px;background:var(--surface2);border-radius:var(--radius-sm);border:1.5px dashed var(--border);">📎 Nenhum comprovante enviado.</div>
     </div>
     <div class="form-group" style="margin-bottom:8px;">
       <label>Observação (opcional)</label>
@@ -1979,11 +1980,16 @@ function closeSidebar(app) {
 
 function loginTeacher() {
   const cpf = document.getElementById('t-cpf').value.trim();
-  const dia = document.getElementById('t-dob-dia').value.padStart(2,'0');
-  const mes = document.getElementById('t-dob-mes').value.padStart(2,'0');
-  const ano = document.getElementById('t-dob-ano').value;
-  const dob = ano + '-' + mes + '-' + dia;
-  const teacher = state.teachers.find(t => t.cpf === cpf && t.dob === dob);
+  const dia = document.getElementById('t-dob-dia').value.trim();
+  const mes = document.getElementById('t-dob-mes').value.trim();
+  const ano = document.getElementById('t-dob-ano').value.trim();
+
+  if (!cpf || !dia || !mes || !ano) {
+    document.getElementById('teacher-error').style.display = 'block'; return;
+  }
+
+  const dob = ano + '-' + mes.padStart(2,'0') + '-' + dia.padStart(2,'0');
+  const teacher = state.teachers.find(t => t.cpf.replace(/\D/g,'') === cpf.replace(/\D/g,'') && t.dob === dob);
   if (!teacher) {
     document.getElementById('teacher-error').style.display = 'block'; return;
   }
@@ -2105,8 +2111,10 @@ function getTeacherHours(teacherId) {
 }
 
 function formatDate(d) {
-  if (!d) return '';
-  const [y,m,day] = d.split('-');
+  if (!d || typeof d !== 'string') return '—';
+  const parts = d.split('-');
+  if (parts.length !== 3) return d;
+  const [y, m, day] = parts;
   return `${day}/${m}/${y}`;
 }
 
@@ -2289,6 +2297,12 @@ async function doConfirm() {
   renderTeacherDashboard();
   renderTeacherActivities();
   renderTeacherHistory();
+  // Atualiza coordenação se estiver ativa
+  if (document.getElementById('app-coord')?.classList.contains('active')) {
+    renderActivitiesTable();
+    renderCoordDashboard();
+    updateAnaliseBadge();
+  }
   showToast('Presença confirmada! Agora envie o comprovante.');
   try { if (a) await fbSaveActivity(a); } catch(e) { console.error('Firebase doConfirm:', e); }
 }
@@ -2667,7 +2681,17 @@ function abrirAnalise(id) {
   document.getElementById('anal-act-name').textContent = a.title;
   document.getElementById('anal-act-meta').textContent =
     `${teacher ? teacher.name : '—'} · ${formatDate(a.date)}${a.time ? ' às ' + a.time : ''} · ${a.hours}h · ${a.type}`;
-  document.getElementById('anal-comp-img').src = a.comprovante || '';
+  const img = document.getElementById('anal-comp-img');
+  img.src = a.comprovante || '';
+  img.style.display = a.comprovante ? 'block' : 'none';
+  // Mostra aviso se não houver comprovante
+  const noComp = document.getElementById('anal-no-comprovante');
+  if (noComp) noComp.style.display = a.comprovante ? 'none' : 'block';
+  // Trata erro de imagem quebrada
+  img.onerror = () => {
+    img.style.display = 'none';
+    if (noComp) { noComp.textContent = '⚠️ Imagem não disponível ou URL inválida.'; noComp.style.display = 'block'; }
+  };
   document.getElementById('anal-obs').value = '';
   openModal('modal-analisar');
 }
@@ -2760,7 +2784,7 @@ async function saveTeacher() {
 
   if (editId) {
     const id = parseInt(editId);
-    const duplicate = state.teachers.find(t => t.cpf === cpf && t.id !== id);
+    const duplicate = state.teachers.find(t => t.cpf.replace(/\D/g,'') === cpf.replace(/\D/g,'') && t.id !== id);
     if (duplicate) { showToast('CPF já cadastrado em outro professor.', 'error'); return; }
     const t = state.teachers.find(x => x.id === id);
     if (t) { t.name = name; t.cpf = cpf; t.dob = dob; t.segments = segments; }
@@ -2778,7 +2802,7 @@ async function saveTeacher() {
     showToast('Professor atualizado com sucesso!');
     try { if (t) await fbSaveTeacher(t); } catch(e) { console.error('Firebase saveTeacher edit:', e); }
   } else {
-    if (state.teachers.find(t => t.cpf === cpf)) { showToast('CPF já cadastrado.', 'error'); return; }
+    if (state.teachers.find(t => t.cpf.replace(/\D/g,'') === cpf.replace(/\D/g,''))) { showToast('CPF já cadastrado.', 'error'); return; }
     const newTeacher = { id: state.nextTeacherId++, name, cpf, dob, segments };
     state.teachers.push(newTeacher);
     closeModal('modal-teacher');
@@ -2818,10 +2842,11 @@ function openEditActivityModal(id) {
   document.getElementById('m-a-date').value = a.date;
   document.getElementById('m-a-time').value = a.time || '';
   document.getElementById('m-a-desc').value = a.desc || '';
+  // Popula ambos os selects ANTES de definir os valores
   populateTeacherSelect();
-  // Aguarda o select ser populado antes de definir o valor
-  document.getElementById('m-a-teacher').value = a.teacherId;
-  // Pré-seleciona o tipo
+  refreshActivityTypeSelect();
+  // Define valores com string para garantir match correto
+  document.getElementById('m-a-teacher').value = String(a.teacherId);
   const typeSelect = document.getElementById('m-a-type');
   if (typeSelect) typeSelect.value = a.type;
   openModal('modal-activity');
@@ -2849,7 +2874,7 @@ async function saveActivity() {
   const desc = document.getElementById('m-a-desc').value.trim();
   const editId = document.getElementById('m-a-id').value;
 
-  if (!title || isNaN(hours) || hours <= 0 || !date || !teacherId) { showToast('Preencha todos os campos obrigatórios corretamente.', 'error'); return; }
+  if (!title || !type || isNaN(hours) || hours <= 0 || !date || !teacherId) { showToast('Preencha todos os campos obrigatórios corretamente.', 'error'); return; }
 
   if (editId) {
     const a = state.activities.find(x => x.id === parseInt(editId));
@@ -2859,6 +2884,12 @@ async function saveActivity() {
     renderCoordDashboard();
     renderRelatorio();
     updateAnaliseBadge();
+    // Atualiza visão do professor se ele estiver logado e a atividade for dele
+    if (state.currentTeacher && a && a.teacherId === state.currentTeacher.id) {
+      renderTeacherDashboard();
+      renderTeacherActivities();
+      renderTeacherHistory();
+    }
     showToast('Atividade atualizada com sucesso!');
     try { if (a) await fbSaveActivity(a); } catch(e) { console.error('Firebase saveActivity edit:', e); }
   } else {
@@ -3256,8 +3287,10 @@ async function addActivityType() {
 
 async function removeActivityType(index) {
   const type = state.activityTypes[index];
+  if (!type) return;
   if (!confirm(`Remover o tipo "${type.name}"?`)) return;
-  state.activityTypes.splice(index, 1);
+  // Usa o nome para localizar, evitando problema com índice desatualizado pelo sync em tempo real
+  state.activityTypes = state.activityTypes.filter(t => t.name !== type.name);
   renderActivityTypesList();
   refreshActivityTypeSelect();
   showToast('Tipo removido.');
