@@ -479,7 +479,7 @@
 
   /* MODAL */
   .modal-overlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.35);
+    position: fixed; inset: 0; background: rgba(0,0,0,0.4);
     display: none; align-items: center; justify-content: center;
     z-index: 1000;
   }
@@ -638,13 +638,7 @@
   .timeline-content strong { font-size: 13px; display: block; margin-bottom: 2px; }
   .timeline-content span { font-size: 12px; color: var(--text2); }
 
-  /* RESPONSIVE tweaks */
-  @media (max-width: 768px) {
-    .sidebar { display: none; }
-    .main-content { margin-left: 0; }
-    .grid-2, .grid-3 { grid-template-columns: 1fr; }
-    .stats-grid { grid-template-columns: 1fr 1fr; }
-  }
+  /* RESPONSIVE tweaks — tratadas no bloco mobile abaixo */
 
   /* PAYROLL REPORT */
   .payroll-teacher-block {
@@ -703,7 +697,7 @@
   input, select, textarea { font-size: 16px !important; }
   .btn { font-size: 15px !important; }
 
-  /* ── Overlay escuro atrás do menu ── */
+  /* ── Overlay escuro atrás do menu (sem blur — causa embaçamento no mobile) ── */
   .sidebar-overlay {
     position: fixed;
     inset: 0;
@@ -711,8 +705,8 @@
     z-index: 299;
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.25s, visibility 0.25s;
     pointer-events: none;
+    transition: opacity 0.28s, visibility 0.28s;
   }
   .sidebar-overlay.open {
     opacity: 1;
@@ -752,10 +746,16 @@
 
   @media (max-width: 768px) {
 
+    /* App shell: coluna no mobile (topbar em cima, conteúdo embaixo) */
+    #app-teacher, #app-coord {
+      flex-direction: column !important;
+      width: 100% !important;
+    }
+
     /* Hambúrguer visível */
     .hamburger-btn { display: flex; }
 
-    /* Sidebar: fora da tela por padrão, desliza para dentro */
+    /* Sidebar: overlay deslizante — NÃO ocupa espaço no layout */
     .sidebar {
       position: fixed !important;
       top: 0; left: 0; bottom: 0;
@@ -767,17 +767,14 @@
       box-shadow: 4px 0 24px rgba(0,0,0,0.18);
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
+      display: flex !important;
     }
-    .sidebar.open {
-      transform: translateX(0);
-    }
+    .sidebar.open { transform: translateX(0); }
 
-    /* Mostra tudo que estava oculto dentro da sidebar */
+    /* Garante que conteúdo interno da sidebar apareça */
     .sidebar-logo,
     .sidebar-user,
     .sidebar-footer { display: flex !important; }
-
-    /* Itens do menu em coluna (padrão desktop) */
     .sidebar-nav { flex: 1; overflow-y: auto; padding: 12px; }
     .nav-section { display: block !important; }
     .nav-label { display: block !important; }
@@ -795,21 +792,22 @@
     .nav-item .nav-icon { font-size: 18px !important; }
     .nav-badge { position: static !important; transform: none !important; }
 
-    /* Main sem margem lateral (sidebar é overlay) */
+    /* Main ocupa 100% da largura (sidebar é overlay, não empurra) */
     .main-content {
       margin-left: 0 !important;
-      padding-bottom: env(safe-area-inset-bottom);
+      width: 100% !important;
       min-height: 100dvh;
+      padding-bottom: calc(64px + env(safe-area-inset-bottom));
     }
 
-    /* Topbar compacto com hambúrguer + título + data */
+    /* Topbar */
     .topbar {
       padding: 12px 16px;
       padding-top: calc(12px + env(safe-area-inset-top));
       position: sticky;
       top: 0;
       z-index: 100;
-      background: var(--bg);
+      background: var(--surface);
       border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
@@ -825,13 +823,7 @@
       margin: 0;
     }
     .topbar-right { display: flex !important; align-items: center; gap: 8px; }
-    .topbar-date { font-size: 12px !important; }
-
-    /* Chip de usuário no topbar */
-    .topbar-user-chip {
-      display: none;
-    }
-    .mobile-logout-btn { display: none !important; }
+    .topbar-date { font-size: 11px !important; display: none; }
 
     /* Content area */
     .content-area { padding: 12px; }
@@ -877,8 +869,44 @@
     .card { padding: 16px; }
     .card-header { margin-bottom: 14px; flex-wrap: wrap; gap: 8px; }
 
-    /* Bottom nav desativado */
-    .bottom-nav { display: none !important; }
+    /* ── Bottom Nav ── */
+    .bottom-nav {
+      display: flex !important;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: var(--surface);
+      border-top: 1.5px solid var(--border);
+      z-index: 200;
+      padding-bottom: env(safe-area-inset-bottom);
+      box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
+    }
+    .bottom-nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      padding: 10px 4px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: var(--text3);
+      font-family: inherit;
+      -webkit-tap-highlight-color: transparent;
+      transition: color 0.2s;
+      position: relative;
+    }
+    .bottom-nav-item.active { color: var(--cyan-dark); }
+    .bn-icon { font-size: 22px; line-height: 1; }
+    .bn-label { font-size: 10px; font-weight: 600; }
+    .bn-badge {
+      position: absolute;
+      top: 6px; right: calc(50% - 18px);
+      background: var(--cyan); color: #fff;
+      font-size: 9px; font-weight: 700;
+      padding: 1px 5px; border-radius: 50px;
+    }
   }
 
   /* PWA Install Banner */
@@ -1938,7 +1966,7 @@ function closeSidebar(app) {
   sidebar.classList.remove('open');
   overlay.classList.remove('open');
   if (btn) btn.classList.remove('open');
-  setTimeout(() => { document.body.style.overflow = ''; }, 280);
+  setTimeout(() => { document.body.style.overflow = ''; }, 300);
 }
 
 function loginTeacher() {
