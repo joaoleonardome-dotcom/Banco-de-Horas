@@ -824,13 +824,22 @@
     /* Login box */
     .login-box { padding: 28px 20px; margin: 12px 16px; width: calc(100% - 32px); }
 
-    /* Modais como bottom sheet */
-    .modal-overlay { align-items: flex-end; }
+    /* Modais centralizados no mobile */
+    .modal-overlay {
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      padding-bottom: calc(16px + env(safe-area-inset-bottom));
+      box-sizing: border-box;
+    }
     .modal {
-      border-radius: var(--radius) var(--radius) 0 0;
-      max-height: 94dvh;
+      border-radius: var(--radius-lg);
+      max-height: calc(90dvh - env(safe-area-inset-bottom));
+      width: 100%;
+      max-width: 480px;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
+      margin: auto;
     }
 
     /* Touch targets */
