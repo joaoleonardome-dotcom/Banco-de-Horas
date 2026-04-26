@@ -2,13 +2,13 @@
   "name": "Banco de Horas — Arena",
   "short_name": "Banco de Horas",
   "description": "Sistema de gestão de horas extras para professores da Arena",
-  "start_url": "/index.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#F0FDFA",
   "theme_color": "#0F9A8A",
   "lang": "pt-BR",
-  "scope": "/",
+  "scope": "./",
   "categories": ["education", "productivity"],
   "icons": [
     {
@@ -76,13 +76,13 @@
     {
       "name": "Entrar como Professor",
       "short_name": "Professor",
-      "url": "/index.html#teacher",
+      "url": "./index.html#teacher",
       "icons": [{ "src": "icons/icon-96x96.png", "sizes": "96x96" }]
     },
     {
       "name": "Entrar como Coordenação",
       "short_name": "Coordenação",
-      "url": "/index.html#coord",
+      "url": "./index.html#coord",
       "icons": [{ "src": "icons/icon-96x96.png", "sizes": "96x96" }]
     }
   ]
