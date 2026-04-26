@@ -714,6 +714,9 @@
     pointer-events: auto;
   }
 
+  /* ── Bottom Nav: escondido no desktop, visível só no mobile ── */
+  .bottom-nav { display: none; }
+
   /* ── Botão hambúrguer (oculto no desktop) ── */
   .hamburger-btn {
     display: none;
@@ -797,7 +800,7 @@
       margin-left: 0 !important;
       width: 100% !important;
       min-height: 100dvh;
-      padding-bottom: calc(64px + env(safe-area-inset-bottom));
+      padding-bottom: calc(60px + env(safe-area-inset-bottom) + 12px);
     }
 
     /* Topbar */
@@ -871,14 +874,15 @@
 
     /* ── Bottom Nav ── */
     .bottom-nav {
-      display: flex !important;
+      display: flex;
       position: fixed;
       bottom: 0; left: 0; right: 0;
       background: var(--surface);
       border-top: 1.5px solid var(--border);
-      z-index: 200;
+      z-index: 9999;
       padding-bottom: env(safe-area-inset-bottom);
       box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
+      height: calc(60px + env(safe-area-inset-bottom));
     }
     .bottom-nav-item {
       flex: 1;
@@ -1178,26 +1182,7 @@
       </div>
     </div>
   </div>
-  <!-- BOTTOM NAV PROFESSOR (mobile) -->
-  <nav class="bottom-nav" id="t-bottom-nav">
-    <button class="bottom-nav-item active" id="t-bn-dashboard" onclick="teacherNav('dashboard',this);bnActive('t','dashboard')">
-      <span class="bn-icon">📊</span>
-      <span class="bn-label">Início</span>
-    </button>
-    <button class="bottom-nav-item" id="t-bn-atividades" onclick="teacherNav('atividades',this);bnActive('t','atividades')">
-      <span class="bn-icon">📋</span>
-      <span class="bn-label">Atividades</span>
-      <span class="bn-badge" id="t-bn-badge" style="display:none;">0</span>
-    </button>
-    <button class="bottom-nav-item" id="t-bn-historico" onclick="teacherNav('historico',this);bnActive('t','historico')">
-      <span class="bn-icon">🕐</span>
-      <span class="bn-label">Histórico</span>
-    </button>
-    <button class="bottom-nav-item" onclick="logout()" style="flex:0.8;">
-      <span class="bn-icon">🚪</span>
-      <span class="bn-label">Sair</span>
-    </button>
-  </nav>
+  </div>
 </div>
 
 <!-- ══════════ APP COORDENAÇÃO ══════════ -->
@@ -1445,31 +1430,55 @@
       </div>
     </div>
   </div>
-  <!-- BOTTOM NAV COORDENAÇÃO (mobile) -->
-  <nav class="bottom-nav" id="c-bottom-nav">
-    <button class="bottom-nav-item active" id="c-bn-dashboard" onclick="coordNav('dashboard',this);bnActive('c','dashboard')">
-      <span class="bn-icon">📊</span>
-      <span class="bn-label">Início</span>
-    </button>
-    <button class="bottom-nav-item" id="c-bn-professores" onclick="coordNav('professores',this);bnActive('c','professores')">
-      <span class="bn-icon">👥</span>
-      <span class="bn-label">Professores</span>
-    </button>
-    <button class="bottom-nav-item" id="c-bn-atividades" onclick="coordNav('atividades',this);bnActive('c','atividades')">
-      <span class="bn-icon">📋</span>
-      <span class="bn-label">Atividades</span>
-      <span class="bn-badge" id="c-bn-badge" style="display:none;">0</span>
-    </button>
-    <button class="bottom-nav-item" id="c-bn-relatorio" onclick="coordNav('relatorio',this);bnActive('c','relatorio')">
-      <span class="bn-icon">📈</span>
-      <span class="bn-label">Relatório</span>
-    </button>
-    <button class="bottom-nav-item" id="c-bn-config" onclick="coordNav('configuracoes',this);bnActive('c','config')" style="flex:0.8;">
-      <span class="bn-icon">⚙️</span>
-      <span class="bn-label">Config</span>
-    </button>
-  </nav>
+  </div>
 </div>
+
+<!-- ══════════ BOTTOM NAVS (fora dos pages para evitar conflito com transform da sidebar) ══════════ -->
+<!-- Bottom Nav Professor (mobile) -->
+<nav class="bottom-nav" id="t-bottom-nav" style="display:none;">
+  <button class="bottom-nav-item active" id="t-bn-dashboard" onclick="teacherNav('dashboard',this);bnActive('t','dashboard')">
+    <span class="bn-icon">📊</span>
+    <span class="bn-label">Início</span>
+  </button>
+  <button class="bottom-nav-item" id="t-bn-atividades" onclick="teacherNav('atividades',this);bnActive('t','atividades')">
+    <span class="bn-icon">📋</span>
+    <span class="bn-label">Atividades</span>
+    <span class="bn-badge" id="t-bn-badge" style="display:none;">0</span>
+  </button>
+  <button class="bottom-nav-item" id="t-bn-historico" onclick="teacherNav('historico',this);bnActive('t','historico')">
+    <span class="bn-icon">🕐</span>
+    <span class="bn-label">Histórico</span>
+  </button>
+  <button class="bottom-nav-item" onclick="logout()" style="flex:0.8;">
+    <span class="bn-icon">🚪</span>
+    <span class="bn-label">Sair</span>
+  </button>
+</nav>
+
+<!-- Bottom Nav Coordenação (mobile) -->
+<nav class="bottom-nav" id="c-bottom-nav" style="display:none;">
+  <button class="bottom-nav-item active" id="c-bn-dashboard" onclick="coordNav('dashboard',this);bnActive('c','dashboard')">
+    <span class="bn-icon">📊</span>
+    <span class="bn-label">Início</span>
+  </button>
+  <button class="bottom-nav-item" id="c-bn-professores" onclick="coordNav('professores',this);bnActive('c','professores')">
+    <span class="bn-icon">👥</span>
+    <span class="bn-label">Professores</span>
+  </button>
+  <button class="bottom-nav-item" id="c-bn-atividades" onclick="coordNav('atividades',this);bnActive('c','atividades')">
+    <span class="bn-icon">📋</span>
+    <span class="bn-label">Atividades</span>
+    <span class="bn-badge" id="c-bn-badge" style="display:none;">0</span>
+  </button>
+  <button class="bottom-nav-item" id="c-bn-relatorio" onclick="coordNav('relatorio',this);bnActive('c','relatorio')">
+    <span class="bn-icon">📈</span>
+    <span class="bn-label">Relatório</span>
+  </button>
+  <button class="bottom-nav-item" id="c-bn-config" onclick="coordNav('configuracoes',this);bnActive('c','config')" style="flex:0.8;">
+    <span class="bn-icon">⚙️</span>
+    <span class="bn-label">Config</span>
+  </button>
+</nav>
 
 <!-- ══════════ MODALS ══════════ -->
 <!-- Add Teacher -->
@@ -1888,6 +1897,13 @@ async function loadState() {
 function showPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+
+  // Mostra/oculta bottom navs conforme a página ativa (apenas mobile)
+  const isMobile = window.innerWidth <= 768;
+  const tNav = document.getElementById('t-bottom-nav');
+  const cNav = document.getElementById('c-bottom-nav');
+  if (tNav) tNav.style.display = (isMobile && id === 'app-teacher') ? 'flex' : 'none';
+  if (cNav) cNav.style.display = (isMobile && id === 'app-coord')   ? 'flex' : 'none';
 }
 
 function teacherNav(panel, el) {
@@ -3270,6 +3286,11 @@ function updateOnlineStatus() {
 }
 window.addEventListener('online', updateOnlineStatus);
 window.addEventListener('offline', updateOnlineStatus);
+window.addEventListener('resize', () => {
+  // Reavalia visibilidade do bottom-nav ao girar a tela
+  const activePage = document.querySelector('.page.active');
+  if (activePage) showPage(activePage.id);
+});
 updateOnlineStatus();
 
 // ══════════════════════════════════
