@@ -3172,7 +3172,7 @@ function refreshActivityTypeSelect() {
 // Registra Service Worker
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').then((reg) => {
+    navigator.serviceWorker.register('./sw.js').then((reg) => {
       console.log('[PWA] SW registrado:', reg.scope);
 
       // Notifica quando há atualização disponível
