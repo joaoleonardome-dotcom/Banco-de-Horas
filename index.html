@@ -992,7 +992,7 @@
       <p>Acesse suas atividades, registre presença e acompanhe suas horas extras.</p>
       <div class="card-btn">Entrar</div>
     </div>
-    <div class="access-card coord" onclick="showPage('login-coord')">
+    <div class="access-card coord" id="coord-access-card" style="display:none;" onclick="showPage('login-coord')">
       <div class="card-icon">🏫</div>
       <h2>Coordenação</h2>
       <p>Gerencie professores, cadastre atividades e acompanhe o relatório geral.</p>
@@ -3547,6 +3547,7 @@ Object.assign(window, {
   if (hash === '#teacher') {
     setTimeout(() => showPage('login-teacher'), 100);
   } else if (hash === '#coord') {
+    // Variação B: vai direto para o login da coordenação, sem passar pela landing
     setTimeout(() => showPage('login-coord'), 100);
   }
 })();
