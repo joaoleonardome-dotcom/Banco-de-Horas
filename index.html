@@ -481,7 +481,7 @@
   .modal-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.35);
     display: none; align-items: center; justify-content: center;
-    z-index: 1000; backdrop-filter: blur(3px);
+    z-index: 1000;
   }
   .modal-overlay.open { display: flex; }
   .modal {
@@ -705,19 +705,19 @@
 
   /* ── Overlay escuro atrás do menu ── */
   .sidebar-overlay {
-    display: none;
     position: fixed;
     inset: 0;
     background: rgba(0,0,0,0.45);
     z-index: 299;
-    backdrop-filter: blur(2px);
-    -webkit-backdrop-filter: blur(2px);
     opacity: 0;
-    transition: opacity 0.25s;
+    visibility: hidden;
+    transition: opacity 0.25s, visibility 0.25s;
+    pointer-events: none;
   }
   .sidebar-overlay.open {
-    display: block;
     opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
   }
 
   /* ── Botão hambúrguer (oculto no desktop) ── */
@@ -1938,7 +1938,7 @@ function closeSidebar(app) {
   sidebar.classList.remove('open');
   overlay.classList.remove('open');
   if (btn) btn.classList.remove('open');
-  document.body.style.overflow = '';
+  setTimeout(() => { document.body.style.overflow = ''; }, 280);
 }
 
 function loginTeacher() {
