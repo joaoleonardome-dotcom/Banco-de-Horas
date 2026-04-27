@@ -1724,18 +1724,11 @@ async function fbSaveConfig() {
 const STORAGE_KEY = 'bancoHoras_v1'; // mantido apenas para migração
 
 const DEFAULT_STATE = {
-  teachers: [
-    { id: 1, name: 'Ana Clara Mendes', cpf: '123.456.789-00', dob: '1988-03-15', segments: ['Fundamental I', 'Fundamental II'] },
-    { id: 2, name: 'Bruno Oliveira', cpf: '987.654.321-00', dob: '1985-07-22', segments: ['Ensino Médio'] },
-    { id: 3, name: 'Carla Fonseca', cpf: '111.222.333-44', dob: '1991-11-30', segments: ['Fundamental I'] },
-  ],
-  activities: [
-    { id: 1, title: 'Jogo de Futebol — Final Escolar', type: 'Jogo/Evento', teacherId: 1, date: '2025-04-28', time: '14:00', hours: 3, desc: 'Final do campeonato interno', status: 'pendente', comprovante: null, obs: null },
-    { id: 2, title: 'Aula de Reforço — Matemática', type: 'Aula Extra', teacherId: 1, date: '2025-04-22', time: '07:00', hours: 2, desc: 'Reforço pré-prova', status: 'aprovado', comprovante: null, obs: null },
-    { id: 3, title: 'Olimpíada de Ciências', type: 'Olimpíada', teacherId: 2, date: '2025-04-30', time: '08:00', hours: 5, desc: 'Preparação para olimpíada estadual', status: 'aguardando_comprovante', comprovante: null, obs: null },
-    { id: 4, title: 'Reunião Pedagógica', type: 'Reunião', teacherId: 3, date: '2025-04-20', time: '17:00', hours: 1.5, desc: 'Planejamento bimestral', status: 'aprovado', comprovante: null, obs: null },
-    { id: 5, title: 'Excursão Museu Histórico', type: 'Excursão', teacherId: 2, date: '2025-05-05', time: '07:30', hours: 6, desc: 'Visita guiada com alunos', status: 'pendente', comprovante: null, obs: null },
-  ],
+  // BUG FIX: arrays vazios — dados reais vêm sempre do Firebase.
+  // Os dados de exemplo foram removidos para evitar que, em qualquer
+  // falha de inicialização, esses registros fantasma contaminem o banco.
+  teachers: [],
+  activities: [],
   currentTeacher: null,
   confirmActivityId: null,
   nextTeacherId: 4,
@@ -1857,7 +1850,17 @@ document.addEventListener('visibilitychange', () => {
 async function migrateFromLocalStorage() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (!saved) return false;
+
+    // BUG FIX: Sempre marca como migrado independente do resultado,
+    // para não rodar de novo em dispositivos que nunca tiveram dados locais.
+    // Sem isso, o celular (que nunca teve localStorage) rodava essa função
+    // toda vez que abria o app.
+    localStorage.setItem(STORAGE_KEY + '_migrated', '1');
+
+    if (!saved) {
+      console.log('[Migração] Nenhum dado local encontrado. Nada a migrar.');
+      return false;
+    }
     const local = JSON.parse(saved);
 
     // Verifica se o Firebase já tem dados
@@ -1892,8 +1895,6 @@ async function migrateFromLocalStorage() {
       nextActivityId:    local.nextActivityId     ?? state.nextActivityId,
     });
 
-    // Marca como migrado para não rodar de novo
-    localStorage.setItem(STORAGE_KEY + '_migrated', '1');
     console.log('[Migração] Concluída com sucesso!');
     return true;
   } catch(e) {
@@ -1910,6 +1911,14 @@ async function loadState() {
   }
 
   // Carrega dados do Firebase
+  // BUG FIX: state começa VAZIO (sem os dados hardcoded do DEFAULT_STATE)
+  // para garantir que, se o Firebase tiver dados reais, eles substituam
+  // completamente o estado — e não se misturem com professores de exemplo.
+  // Antes, se o getDocs falhasse silenciosamente, os defaults ficavam no state
+  // e podiam ser salvos de volta no Firebase, apagando dados reais.
+  state.teachers = [];
+  state.activities = [];
+
   try {
     const [configSnap, teachersSnap, activitiesSnap] = await Promise.all([
       getDocs(collection(db, 'config')),
