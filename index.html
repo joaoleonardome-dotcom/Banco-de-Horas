@@ -2215,15 +2215,32 @@ function teacherNextMonth() {
   renderTeacherDashboard();
 }
 
+// Retorna {start, end} do ciclo de pagamento para um dado mês de referência
+// "Abril 2025" = 26/03/2025 até 25/04/2025
+function getCycleRange(year, month) {
+  const start = new Date(year, month - 1, 26); // dia 26 do mês anterior
+  const end   = new Date(year, month, 25);      // dia 25 do mês corrente
+  return { start, end };
+}
+
 function filterByMonth(acts, year, month) {
+  const { start, end } = getCycleRange(year, month);
   return acts.filter(a => {
     const d = new Date(a.date + 'T00:00:00');
-    return d.getFullYear() === year && d.getMonth() === month;
+    return d >= start && d <= end;
   });
+}
+
+// Formata o intervalo do ciclo para exibição: "26/03/2025 a 25/04/2025"
+function formatCycleRange(year, month) {
+  const { start, end } = getCycleRange(year, month);
+  const fmt = d => d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric' });
+  return `${fmt(start)} a ${fmt(end)}`;
 }
 
 function renderTeacherDashboard() {
   const t = state.currentTeacher;
+  if (!t) return; // guard: professor não está logado nesta sessão
   const allActs = getTeacherActivities(t.id);
   const { year, month } = teacherMonthState;
   const acts = filterByMonth(allActs, year, month);
@@ -2231,8 +2248,9 @@ function renderTeacherDashboard() {
   // Atualiza label do mês e botão avançar
   const now = new Date();
   const isCurrentMonth = year === now.getFullYear() && month === now.getMonth();
+  const cycleLabel = formatCycleRange(year, month);
   document.getElementById('t-month-label').textContent = `${MONTH_NAMES[month]} ${year}`;
-  document.getElementById('t-hours-label').textContent = isCurrentMonth ? `Horas de ${MONTH_NAMES[month]}` : `Horas — ${MONTH_NAMES[month]}`;
+  document.getElementById('t-hours-label').textContent = cycleLabel;
   const nextBtn = document.getElementById('t-next-month-btn');
   if (nextBtn) nextBtn.style.opacity = isCurrentMonth ? '0.3' : '1';
 
@@ -2367,9 +2385,11 @@ function renderTeacherHistory() {
   let acts = getTeacherActivities(t.id).sort((a,b) => b.date.localeCompare(a.date));
   if (filterVal && filterVal !== 'all') {
     const [fy, fm] = filterVal.split('-').map(Number);
+    // Ciclo: 26 do mês anterior até 25 do mês corrente
+    const { start, end } = getCycleRange(fy, fm);
     acts = acts.filter(a => {
       const d = new Date(a.date + 'T00:00:00');
-      return d.getFullYear() === fy && d.getMonth() === fm;
+      return d >= start && d <= end;
     });
   }
   const tbody = document.getElementById('t-history-body');
@@ -2821,11 +2841,10 @@ async function aprovarAtividade() {
   renderCoordDashboard();
   renderRelatorio();
   updateAnaliseBadge();
-  if (state.currentTeacher && a && a.teacherId === state.currentTeacher.id) {
-    renderTeacherDashboard();
-    renderTeacherActivities();
-    renderTeacherHistory();
-  }
+  // Atualiza tela do professor (mesmo dispositivo ou via realtime sync)
+  renderTeacherDashboard();
+  renderTeacherActivities();
+  renderTeacherHistory();
   showToast('Comprovante aprovado! Horas contabilizadas.');
   try { if (a) await fbSaveActivity(a); } catch(e) { console.error('Firebase aprovarAtividade:', e); }
 }
@@ -2843,11 +2862,9 @@ async function reprovarAtividade() {
   renderCoordDashboard();
   renderRelatorio();
   updateAnaliseBadge();
-  if (state.currentTeacher && a && a.teacherId === state.currentTeacher.id) {
-    renderTeacherDashboard();
-    renderTeacherActivities();
-    renderTeacherHistory();
-  }
+  renderTeacherDashboard();
+  renderTeacherActivities();
+  renderTeacherHistory();
   showToast('Comprovante reprovado. Professor será notificado para reenvio.');
   try { if (a) await fbSaveActivity(a); } catch(e) { console.error('Firebase reprovarAtividade:', e); }
 }
@@ -3163,10 +3180,21 @@ function renderRelatorio() {
     return;
   }
 
-  // Group approved activities by year-month
+  // Agrupa atividades aprovadas por ciclo de pagamento (26 do mês ant. → 25 do mês)
+  // A chave é 'YYYY-MM' referente ao mês de referência do ciclo
+  function getCycleKeyForDate(dateStr) {
+    const d = new Date(dateStr + 'T00:00:00');
+    // Se o dia é >= 26, pertence ao ciclo do mês seguinte
+    if (d.getDate() >= 26) {
+      const next = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+      return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2,'0')}`;
+    }
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2,'0')}`;
+  }
+
   const byMonth = {};
   aprovadas.forEach(a => {
-    const key = a.date.slice(0, 7); // 'YYYY-MM'
+    const key = getCycleKeyForDate(a.date);
     if (!byMonth[key]) byMonth[key] = [];
     byMonth[key].push(a);
   });
@@ -3174,14 +3202,15 @@ function renderRelatorio() {
   // Sort months descending
   const months = Object.keys(byMonth).sort((a,b) => b.localeCompare(a));
 
-  // Default: select previous month
+  // Default: select current month
   const now = new Date();
-  const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const defaultKey = prevMonth.toISOString().slice(0, 7);
+  const defaultKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2,'0')}`;
 
   const monthLabel = key => {
-    const [y, m] = key.split('-');
-    return new Date(parseInt(y), parseInt(m)-1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+    const [y, m] = key.split('-').map(Number);
+    const range = formatCycleRange(y, m);
+    const mName = new Date(y, m-1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+    return `${mName} (${range})`;
   };
 
   let html = '';
@@ -3219,7 +3248,14 @@ function renderPayrollMonth() {
   const key = sel.value;
 
   // Recalcula direto do estado — não depende de _payrollMonths que pode estar desatualizado
-  const acts = state.activities.filter(a => a.status === 'aprovado' && a.date.slice(0,7) === key);
+  // Filtra pelo ciclo de pagamento do mês de referência (26 do ant. → 25 do corrente)
+  const [_ky, _km] = key.split('-').map(Number);
+  const { start: _cs, end: _ce } = getCycleRange(_ky, _km);
+  const acts = state.activities.filter(a => {
+    if (a.status !== 'aprovado') return false;
+    const d = new Date(a.date + 'T00:00:00');
+    return d >= _cs && d <= _ce;
+  });
   const fmtHrs = h => Number.isInteger(h) ? h : h.toFixed(1);
 
   if (!acts.length) {
@@ -3286,8 +3322,9 @@ function gerarRelatorio() {
   if (!selectedIds.length) { showToast('Selecione ao menos uma atividade para gerar o relatório.', 'error'); return; }
 
   const monthKey = sel.value;
-  const [y, m] = monthKey.split('-');
-  const mesRef = new Date(parseInt(y), parseInt(m)-1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  const [y, m] = monthKey.split('-').map(Number);
+  const mesRef = new Date(y, m-1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  const cicloRef = formatCycleRange(y, m);
   const fmtHrs = h => Number.isInteger(h) ? h : h.toFixed(1);
   const now = new Date();
   const dataGeracao = now.toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' });
@@ -3315,6 +3352,7 @@ function gerarRelatorio() {
         <div style="text-align:right;">
           <div style="font-size:9px;font-weight:700;">Relatório de Pagamento — Horas Extras</div>
           <div style="font-size:7px;color:#4A7C75;margin-top:2px;">Mês de referência: <strong style="color:#0F9A8A;">${mesRef}</strong></div>
+          <div style="font-size:7px;color:#4A7C75;margin-top:1px;">Período: <strong style="color:#0F9A8A;">${cicloRef}</strong></div>
           <div style="font-size:7px;color:#94A3B8;margin-top:1px;">Emitido em ${dataGeracao}</div>
         </div>
       </div>
