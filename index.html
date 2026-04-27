@@ -1767,11 +1767,12 @@ let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
 // Qualquer alteração feita em outro dispositivo é
 // refletida automaticamente na tela de todos.
 // ══════════════════════════════════════════════════════
-let _fbReady = { config: false, teachers: false, activities: false };
 
-function _checkAllReady() {
-  return _fbReady.config && _fbReady.teachers && _fbReady.activities;
-}
+// BUG FIX: cada listener é rastreado individualmente para evitar
+// que o flag "firstLoad" fique preso em true entre sessões.
+let _syncListeners = { config: false, teachers: false, activities: false };
+// BUG FIX: unsubscribe anterior antes de re-registrar (evita listeners duplicados no mobile)
+let _unsubscribers = [];
 
 function _refreshAllUI() {
   populateTeacherSelect();
@@ -1795,8 +1796,14 @@ function _refreshAllUI() {
 }
 
 function startRealtimeSync() {
+  // BUG FIX: cancela listeners anteriores para evitar duplicação (problema comum no mobile/PWA)
+  _unsubscribers.forEach(fn => { try { fn(); } catch(e) {} });
+  _unsubscribers = [];
+  // BUG FIX: reseta flags para que cada listener identifique corretamente seu "firstLoad"
+  _syncListeners = { config: false, teachers: false, activities: false };
+
   // Config global
-  onSnapshot(collection(db, 'config'), snap => {
+  const unsubConfig = onSnapshot(collection(db, 'config'), snap => {
     snap.forEach(d => {
       if (d.id === 'global') {
         const data = d.data();
@@ -1807,29 +1814,40 @@ function startRealtimeSync() {
         state.nextActivityId    = data.nextActivityId    ?? state.nextActivityId;
       }
     });
-    const firstLoad = !_fbReady.config;
-    _fbReady.config = true;
-    if (!firstLoad && _checkAllReady()) _refreshAllUI();
-  }, e => { console.warn('onSnapshot config:', e); _fbReady.config = true; });
+    const firstLoad = !_syncListeners.config;
+    _syncListeners.config = true;
+    // BUG FIX: atualiza UI em qualquer snapshot subsequente, sem exigir que os outros 2 também cheguem
+    if (!firstLoad) _refreshAllUI();
+  }, e => { console.warn('onSnapshot config:', e); _syncListeners.config = true; });
 
   // Professores
-  onSnapshot(collection(db, 'teachers'), snap => {
+  const unsubTeachers = onSnapshot(collection(db, 'teachers'), snap => {
     state.teachers = [];
     snap.forEach(d => state.teachers.push({ id: Number(d.id), ...d.data() }));
-    const firstLoad = !_fbReady.teachers;
-    _fbReady.teachers = true;
-    if (!firstLoad && _checkAllReady()) _refreshAllUI();
-  }, e => { console.warn('onSnapshot teachers:', e); _fbReady.teachers = true; });
+    const firstLoad = !_syncListeners.teachers;
+    _syncListeners.teachers = true;
+    if (!firstLoad) _refreshAllUI();
+  }, e => { console.warn('onSnapshot teachers:', e); _syncListeners.teachers = true; });
 
   // Atividades
-  onSnapshot(collection(db, 'activities'), snap => {
+  const unsubActivities = onSnapshot(collection(db, 'activities'), snap => {
     state.activities = [];
     snap.forEach(d => state.activities.push({ id: Number(d.id), ...d.data() }));
-    const firstLoad = !_fbReady.activities;
-    _fbReady.activities = true;
-    if (!firstLoad && _checkAllReady()) _refreshAllUI();
-  }, e => { console.warn('onSnapshot activities:', e); _fbReady.activities = true; });
+    const firstLoad = !_syncListeners.activities;
+    _syncListeners.activities = true;
+    if (!firstLoad) _refreshAllUI();
+  }, e => { console.warn('onSnapshot activities:', e); _syncListeners.activities = true; });
+
+  _unsubscribers = [unsubConfig, unsubTeachers, unsubActivities];
 }
+
+// BUG FIX: quando o app volta do background no celular, força refresh da UI
+// pois o Firebase pode ter bufferizado atualizações enquanto estava em segundo plano
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    _refreshAllUI();
+  }
+});
 
 // ══════════════════════════════════════════════════════
 // MIGRAÇÃO localStorage → Firebase
