@@ -1121,9 +1121,15 @@
     <div class="content-area">
       <!-- DASHBOARD PANEL -->
       <div class="panel active" id="t-panel-dashboard">
+        <!-- Seletor de mês -->
+        <div id="t-month-nav" style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:12px;">
+          <button onclick="teacherPrevMonth()" style="background:rgba(255,255,255,0.2);border:none;color:#fff;font-size:22px;width:44px;height:44px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;touch-action:manipulation;">‹</button>
+          <div id="t-month-label" style="font-size:16px;font-weight:700;color:#fff;min-width:140px;text-align:center;letter-spacing:0.5px;"></div>
+          <button onclick="teacherNextMonth()" id="t-next-month-btn" style="background:rgba(255,255,255,0.2);border:none;color:#fff;font-size:22px;width:44px;height:44px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;touch-action:manipulation;">›</button>
+        </div>
         <div class="hours-hero">
           <div>
-            <h2>Total de Horas Extras Acumuladas</h2>
+            <h2 id="t-hours-label">Horas do Mês</h2>
             <div class="big-num" id="t-total-hours">0 <span>hrs</span></div>
           </div>
           <div class="hero-icon">⏱️</div>
@@ -1160,8 +1166,11 @@
       <!-- HISTÓRICO PANEL -->
       <div class="panel" id="t-panel-historico">
         <div class="card">
-          <div class="card-header">
+          <div class="card-header" style="flex-wrap:wrap;gap:8px;">
             <div><div class="card-title">Histórico de Horas Extras</div></div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <select id="t-hist-month" onchange="renderTeacherHistory()" style="padding:8px 10px;border:1.5px solid var(--border2);border-radius:var(--radius-sm);font-size:13px;outline:none;"></select>
+            </div>
           </div>
           <div class="table-wrap">
             <table>
@@ -1929,7 +1938,7 @@ function teacherNav(panel, el) {
   document.getElementById('t-page-title').textContent = titles[panel] || panel;
   if (window.innerWidth <= 768) closeSidebar('t');
   if (panel === 'atividades') renderTeacherActivities();
-  if (panel === 'historico') renderTeacherHistory();
+  if (panel === 'historico') { populateHistMonthSelect(); renderTeacherHistory(); }
   if (panel === 'dashboard') renderTeacherDashboard();
 }
 
@@ -2073,7 +2082,7 @@ function logout() {
   document.getElementById('c-pass').value = '';
   document.getElementById('coord-error').style.display = 'none';
   // Clear teacher panels
-  const clearIds = ['t-stats-grid','t-upcoming-list','t-all-activities','t-history-body'];
+  const clearIds = ['t-stats-grid','t-upcoming-list','t-all-activities','t-history-body','t-hist-month'];
   clearIds.forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
   document.getElementById('t-total-hours').innerHTML = '0 <span>hrs</span>';
   const badgeEl = document.getElementById('t-pending-badge');
@@ -2188,9 +2197,45 @@ function closeModal(id) { document.getElementById(id).classList.remove('open'); 
 // ══════════════════════════════════
 // TEACHER DASHBOARD
 // ══════════════════════════════════
+// ── Controle de mês da visão do professor ──
+const teacherMonthState = { year: new Date().getFullYear(), month: new Date().getMonth() };
+const MONTH_NAMES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+function teacherPrevMonth() {
+  if (teacherMonthState.month === 0) { teacherMonthState.month = 11; teacherMonthState.year--; }
+  else { teacherMonthState.month--; }
+  renderTeacherDashboard();
+}
+
+function teacherNextMonth() {
+  const now = new Date();
+  if (teacherMonthState.year === now.getFullYear() && teacherMonthState.month === now.getMonth()) return;
+  if (teacherMonthState.month === 11) { teacherMonthState.month = 0; teacherMonthState.year++; }
+  else { teacherMonthState.month++; }
+  renderTeacherDashboard();
+}
+
+function filterByMonth(acts, year, month) {
+  return acts.filter(a => {
+    const d = new Date(a.date + 'T00:00:00');
+    return d.getFullYear() === year && d.getMonth() === month;
+  });
+}
+
 function renderTeacherDashboard() {
   const t = state.currentTeacher;
-  const acts = getTeacherActivities(t.id);
+  const allActs = getTeacherActivities(t.id);
+  const { year, month } = teacherMonthState;
+  const acts = filterByMonth(allActs, year, month);
+
+  // Atualiza label do mês e botão avançar
+  const now = new Date();
+  const isCurrentMonth = year === now.getFullYear() && month === now.getMonth();
+  document.getElementById('t-month-label').textContent = `${MONTH_NAMES[month]} ${year}`;
+  document.getElementById('t-hours-label').textContent = isCurrentMonth ? `Horas de ${MONTH_NAMES[month]}` : `Horas — ${MONTH_NAMES[month]}`;
+  const nextBtn = document.getElementById('t-next-month-btn');
+  if (nextBtn) nextBtn.style.opacity = isCurrentMonth ? '0.3' : '1';
+
   const aprovadas = acts.filter(a => a.status === 'aprovado');
   const pendentes = acts.filter(a => a.status === 'pendente');
   const aguardando = acts.filter(a => a.status === 'aguardando_comprovante');
@@ -2200,7 +2245,10 @@ function renderTeacherDashboard() {
   const fmtHrs = h => Number.isInteger(h) ? h : h.toFixed(1);
 
   document.getElementById('t-total-hours').innerHTML = `${fmtHrs(totalHrs)} <span>hrs</span>`;
-  const pendBadge = pendentes.length + aguardando.length + reprovadas.length;
+
+  // Badge de pendentes usa TODAS as atividades (não só do mês)
+  const allPend = allActs.filter(a => ['pendente','aguardando_comprovante','reprovado'].includes(a.status));
+  const pendBadge = allPend.length;
   const badgeEl = document.getElementById('t-pending-badge');
   badgeEl.textContent = pendBadge || '';
   badgeEl.style.display = pendBadge > 0 ? 'inline-flex' : 'none';
@@ -2209,7 +2257,7 @@ function renderTeacherDashboard() {
     <div class="stat-card">
       <div class="stat-header"><div class="stat-icon cyan">📋</div></div>
       <div class="stat-value">${acts.length}</div>
-      <div class="stat-label">Total de Atividades</div>
+      <div class="stat-label">Atividades do Mês</div>
     </div>
     <div class="stat-card">
       <div class="stat-header"><div class="stat-icon green">✅</div></div>
@@ -2228,8 +2276,9 @@ function renderTeacherDashboard() {
     </div>
   `;
 
-  // Atividades que precisam de ação do professor
-  const acoes = [...pendentes, ...aguardando, ...reprovadas].sort((a,b) => a.date.localeCompare(b.date)).slice(0,5);
+  // Atividades que precisam de ação do professor (todas, não só do mês)
+  const acoes = allActs.filter(a => ['pendente','aguardando_comprovante','reprovado'].includes(a.status))
+    .sort((a,b) => a.date.localeCompare(b.date)).slice(0,5);
   const ul = document.getElementById('t-upcoming-list');
   if (!acoes.length) {
     ul.innerHTML = `<div class="empty-state"><div class="empty-icon">🎉</div><p>Nenhuma ação necessária!</p></div>`;
@@ -2287,14 +2336,49 @@ function renderTeacherActivities() {
   }
 }
 
+function populateHistMonthSelect() {
+  // Só popula se o select estiver vazio (evita reconstruir ao filtrar)
+  const sel = document.getElementById('t-hist-month');
+  if (!sel) return;
+  const t = state.currentTeacher;
+  const acts = getTeacherActivities(t.id);
+  const months = new Set();
+  acts.forEach(a => {
+    const d = new Date(a.date + 'T00:00:00');
+    months.add(`${d.getFullYear()}-${String(d.getMonth()).padStart(2,'0')}`);
+  });
+  const now = new Date();
+  const nowKey = `${now.getFullYear()}-${String(now.getMonth()).padStart(2,'0')}`;
+  months.add(nowKey);
+  const sorted = [...months].sort().reverse();
+  sel.innerHTML = `<option value="all">Todos os meses</option>` +
+    sorted.map(m => {
+      const [y, mo] = m.split('-');
+      return `<option value="${m}">${MONTH_NAMES[parseInt(mo)]} ${y}</option>`;
+    }).join('');
+  // Define mês atual como padrão
+  sel.value = nowKey;
+}
+
 function renderTeacherHistory() {
   const t = state.currentTeacher;
-  const acts = getTeacherActivities(t.id).sort((a,b) => a.date.localeCompare(b.date));
+  const sel = document.getElementById('t-hist-month');
+  const filterVal = sel ? sel.value : 'all';
+  let acts = getTeacherActivities(t.id).sort((a,b) => b.date.localeCompare(a.date));
+  if (filterVal && filterVal !== 'all') {
+    const [fy, fm] = filterVal.split('-').map(Number);
+    acts = acts.filter(a => {
+      const d = new Date(a.date + 'T00:00:00');
+      return d.getFullYear() === fy && d.getMonth() === fm;
+    });
+  }
   const tbody = document.getElementById('t-history-body');
   if (!acts.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:32px;">Nenhum registro.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:32px;">Nenhum registro neste mês.</td></tr>';
     return;
   }
+  const totalAprov = acts.filter(a => a.status === 'aprovado').reduce((s,a) => s+a.hours, 0);
+  const fmtHrs = h => Number.isInteger(h) ? h : h.toFixed(1);
   tbody.innerHTML = acts.map(a => `
     <tr>
       <td><strong>${a.title}</strong>${a.obs ? `<br><span style="font-size:11px;color:var(--danger);">💬 ${a.obs}</span>` : ''}</td>
@@ -2303,7 +2387,12 @@ function renderTeacherHistory() {
       <td><span class="badge-pill badge-blue">${a.type}</span></td>
       <td>${a.segment ? segTag(a.segment) : '<span style="color:var(--text3);font-size:12px;">—</span>'}</td>
       <td>${statusBadgeHtml(a.status)}</td>
-    </tr>`).join('');
+    </tr>`).join('') +
+    `<tr style="background:var(--surface2);font-weight:700;">
+      <td colspan="2" style="text-align:right;padding-right:12px;">Total aprovado no período:</td>
+      <td>${fmtHrs(totalAprov)}h</td>
+      <td colspan="3"></td>
+    </tr>`;
 }
 
 function promptConfirm(id) {
@@ -3484,12 +3573,13 @@ Object.assign(window, {
   promptConfirm, openComprovante, enviarComprovante, removePreview,
   handleFileSelect, handleDrop,
   abrirAnalise, aprovarAtividade, reprovarAtividade,
-  renderTeacherActivities, renderTeachersTable, renderActivitiesTable,
+  renderTeacherActivities, renderTeacherHistory, renderTeachersTable, renderActivitiesTable,
   changePassword, saveHourlyRates,
   addActivityType, removeActivityType,
   maskCPF, toggleCheck, openModal, closeModal,
   voltarSelecao, gerarRelatorio,
   renderPayrollMonth, selectAllPayroll, togglePayrollRow,
+  teacherPrevMonth, teacherNextMonth, populateHistMonthSelect,
   swApplyUpdate, pwaInstall, pwaDismiss,
   populateTeacherSelect, refreshActivityTypeSelect,
 });
