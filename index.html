@@ -1797,38 +1797,46 @@ function startRealtimeSync() {
 
   // Config global
   const unsubConfig = onSnapshot(collection(db, 'config'), snap => {
-    snap.forEach(d => {
-      if (d.id === 'global') {
-        const data = d.data();
-        state.coordPasswordHash = data.coordPasswordHash ?? state.coordPasswordHash;
-        state.hourlyRates       = data.hourlyRates       ?? state.hourlyRates;
-        state.activityTypes     = data.activityTypes     ?? state.activityTypes;
-        state.nextTeacherId     = data.nextTeacherId     ?? state.nextTeacherId;
-        state.nextActivityId    = data.nextActivityId    ?? state.nextActivityId;
-      }
-    });
-    const firstLoad = !_syncListeners.config;
-    _syncListeners.config = true;
-    // BUG FIX: atualiza UI em qualquer snapshot subsequente, sem exigir que os outros 2 também cheguem
-    if (!firstLoad) _refreshAllUI();
+    try {
+      snap.forEach(d => {
+        if (d.id === 'global') {
+          const data = d.data();
+          state.coordPasswordHash = data.coordPasswordHash ?? state.coordPasswordHash;
+          state.hourlyRates       = data.hourlyRates       ?? state.hourlyRates;
+          state.activityTypes     = data.activityTypes     ?? state.activityTypes;
+          state.nextTeacherId     = data.nextTeacherId     ?? state.nextTeacherId;
+          state.nextActivityId    = data.nextActivityId    ?? state.nextActivityId;
+        }
+      });
+      const firstLoad = !_syncListeners.config;
+      _syncListeners.config = true;
+      if (!firstLoad) _refreshAllUI();
+    } catch(e) { console.error('onSnapshot config handler:', e); }
   }, e => { console.warn('onSnapshot config:', e); _syncListeners.config = true; });
 
   // Professores
   const unsubTeachers = onSnapshot(collection(db, 'teachers'), snap => {
-    state.teachers = [];
-    snap.forEach(d => state.teachers.push({ id: Number(d.id), ...d.data() }));
-    const firstLoad = !_syncListeners.teachers;
-    _syncListeners.teachers = true;
-    if (!firstLoad) _refreshAllUI();
+    try {
+      state.teachers = [];
+      snap.forEach(d => state.teachers.push({ id: Number(d.id), ...d.data() }));
+      const firstLoad = !_syncListeners.teachers;
+      _syncListeners.teachers = true;
+      if (!firstLoad) _refreshAllUI();
+    } catch(e) { console.error('onSnapshot teachers handler:', e); }
   }, e => { console.warn('onSnapshot teachers:', e); _syncListeners.teachers = true; });
 
-  // Atividades
+  // Atividades — BUG FIX: try/catch garante que erros de render não
+  // silenciem o listener. Sem isso, um TypeError em renderTeacherActivities()
+  // (quando currentTeacher é null) fazia o onSnapshot parar de funcionar
+  // no celular após a primeira aprovação.
   const unsubActivities = onSnapshot(collection(db, 'activities'), snap => {
-    state.activities = [];
-    snap.forEach(d => state.activities.push({ id: Number(d.id), ...d.data() }));
-    const firstLoad = !_syncListeners.activities;
-    _syncListeners.activities = true;
-    if (!firstLoad) _refreshAllUI();
+    try {
+      state.activities = [];
+      snap.forEach(d => state.activities.push({ id: Number(d.id), ...d.data() }));
+      const firstLoad = !_syncListeners.activities;
+      _syncListeners.activities = true;
+      if (!firstLoad) _refreshAllUI();
+    } catch(e) { console.error('onSnapshot activities handler:', e); }
   }, e => { console.warn('onSnapshot activities:', e); _syncListeners.activities = true; });
 
   _unsubscribers = [unsubConfig, unsubTeachers, unsubActivities];
@@ -2369,6 +2377,7 @@ function activityCard(a, showActions=false) {
 
 function renderTeacherActivities() {
   const t = state.currentTeacher;
+  if (!t) return; // guard: professor não está logado nesta sessão
   const filter = document.getElementById('t-filter-status').value;
   let acts = getTeacherActivities(t.id);
   if (filter) acts = acts.filter(a => a.status === filter);
@@ -2386,6 +2395,7 @@ function populateHistMonthSelect() {
   const sel = document.getElementById('t-hist-month');
   if (!sel) return;
   const t = state.currentTeacher;
+  if (!t) return; // guard: professor não está logado nesta sessão
   const acts = getTeacherActivities(t.id);
   const months = new Set();
   acts.forEach(a => {
@@ -2407,6 +2417,7 @@ function populateHistMonthSelect() {
 
 function renderTeacherHistory() {
   const t = state.currentTeacher;
+  if (!t) return; // guard: professor não está logado nesta sessão
   const sel = document.getElementById('t-hist-month');
   const filterVal = sel ? sel.value : 'all';
   let acts = getTeacherActivities(t.id).sort((a,b) => b.date.localeCompare(a.date));
