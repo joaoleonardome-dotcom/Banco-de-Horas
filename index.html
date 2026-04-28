@@ -3343,15 +3343,20 @@ function renderRelatorio() {
     return;
   }
 
-  // Agrupa atividades aprovadas por ciclo de pagamento (26 do mês ant. → 25 do mês)
-  // A chave é 'YYYY-MM' referente ao mês de referência do ciclo
+  // Agrupa atividades aprovadas por ciclo de pagamento (26 do mês ant. → 25 do mês corrente)
+  // A chave 'YYYY-MM' representa o mês de referência do ciclo.
+  // BUG FIX: usava lógica própria inconsistente com getCycleRange do resto do projeto.
+  // Agora itera pelos meses possíveis usando getCycleRange para classificar cada atividade,
+  // garantindo que dia 10/05 → ciclo Maio (26/04–25/05) e dia 27/04 → ciclo Maio também.
   function getCycleKeyForDate(dateStr) {
     const d = new Date(dateStr + 'T00:00:00');
-    // Se o dia é >= 26, pertence ao ciclo do mês seguinte
+    // Se dia >= 26, o ciclo de referência é o mês seguinte
     if (d.getDate() >= 26) {
-      const next = new Date(d.getFullYear(), d.getMonth() + 1, 1);
-      return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2,'0')}`;
+      const refMonth = d.getMonth() === 11 ? 0 : d.getMonth() + 1;
+      const refYear  = d.getMonth() === 11 ? d.getFullYear() + 1 : d.getFullYear();
+      return `${refYear}-${String(refMonth + 1).padStart(2,'0')}`;
     }
+    // Dias 1–25: o ciclo de referência é o próprio mês (mês base = getMonth()+1)
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2,'0')}`;
   }
 
@@ -3365,9 +3370,15 @@ function renderRelatorio() {
   // Sort months descending
   const months = Object.keys(byMonth).sort((a,b) => b.localeCompare(a));
 
-  // Default: select current month
+  // Default: ciclo ativo corrente (mesma lógica do teacherMonthState)
   const now = new Date();
-  const defaultKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2,'0')}`;
+  const _defMonth = now.getDate() > 25
+    ? (now.getMonth() === 11 ? 0  : now.getMonth() + 1)
+    : now.getMonth();
+  const _defYear  = now.getDate() > 25 && now.getMonth() === 11
+    ? now.getFullYear() + 1
+    : now.getFullYear();
+  const defaultKey = `${_defYear}-${String(_defMonth + 1).padStart(2,'0')}`;
 
   const monthLabel = key => {
     const [y, m] = key.split('-').map(Number);
