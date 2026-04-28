@@ -1641,6 +1641,29 @@
 </div>
 
 <!-- Analisar Comprovante (coordenação) -->
+<!-- Modal: visualizar comprovante já aprovado/reprovado (somente leitura) -->
+<div class="modal-overlay" id="modal-ver-comprovante">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-header">
+      <span class="modal-title">🖼️ Comprovante</span>
+      <button class="modal-close" onclick="closeModal('modal-ver-comprovante')">×</button>
+    </div>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:2px;">Atividade</p>
+    <p style="font-weight:700;font-size:15px;margin-bottom:4px;" id="view-comp-act-name"></p>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:14px;" id="view-comp-act-meta"></p>
+    <div class="comp-img-wrap">
+      <img id="view-comp-img" src="" alt="Comprovante" style="">
+    </div>
+    <div class="modal-footer" style="justify-content:flex-end;">
+      <a id="view-comp-download" href="" target="_blank" rel="noopener"
+         style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-weight:600;color:var(--text1);text-decoration:none;">
+        🔗 Abrir original
+      </a>
+      <button class="btn btn-outline" onclick="closeModal('modal-ver-comprovante')">Fechar</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-analisar">
   <div class="modal" style="max-width:520px;">
     <div class="modal-header">
@@ -2859,11 +2882,15 @@ function renderActivitiesTable() {
       confirmCol = `<span style="display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;color:#1E3A35;background:#F1F5F4;border:1px solid #CBD5D3;border-radius:6px;padding:4px 10px;">✅ Confirmado</span>`;
     }
 
-    // Coluna Ações (editar + excluir + analisar)
+    // Coluna Ações (editar + excluir + analisar + ver comprovante)
     let actionBtn = '';
     if (a.status === 'em_analise') {
       actionBtn = `<button class="btn btn-sm" style="background:#EEF2FF;color:#3730A3;border:1px solid #C7D2FE;font-weight:700;" onclick="abrirAnalise(${a.id})" title="Analisar comprovante">🔍 Analisar</button>`;
     }
+    // Botão de visualizar comprovante disponível para qualquer status que tenha imagem
+    const verBtn = a.comprovante
+      ? `<button class="btn btn-sm" style="background:var(--surface2);color:var(--text1);border:1px solid var(--border);min-width:32px;padding:4px 8px;" onclick="verComprovante(${a.id})" title="Ver comprovante">🖼️</button>`
+      : '';
     return `
       <tr>
         <td><strong>${a.title}</strong>${a.desc ? `<br><span style="font-size:11px;color:var(--text3);">${a.desc.slice(0,50)}${a.desc.length>50?'...':''}</span>` : ''}</td>
@@ -2874,8 +2901,9 @@ function renderActivitiesTable() {
         <td><strong>${a.hours}h</strong></td>
         <td>${statusBadgeHtml(a.status)}</td>
         <td>${confirmCol}</td>
-        <td style="display:flex;gap:6px;flex-wrap:wrap;">
+        <td style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
           ${actionBtn}
+          ${verBtn}
           <button class="btn btn-sm" style="background:var(--blue-bg);color:#1E40AF;border:1px solid #BFDBFE;" onclick="openEditActivityModal(${a.id})" title="Editar atividade">✏️ Editar</button>
           <button class="btn btn-danger btn-xs" onclick="deleteActivity(${a.id})">🗑</button>
         </td>
@@ -2919,6 +2947,20 @@ function updateAnaliseBadge() {
     const tBadge = document.getElementById('t-pending-badge');
     if (tBadge) { tBadge.textContent = tCount; tBadge.style.display = tCount > 0 ? 'inline-flex' : 'none'; }
   }
+}
+
+function verComprovante(id) {
+  const a = state.activities.find(x => x.id === id);
+  if (!a || !a.comprovante) return;
+  const t = getTeacher(a.teacherId);
+  document.getElementById('view-comp-act-name').textContent = a.title;
+  document.getElementById('view-comp-act-meta').textContent =
+    `${t ? t.name : '—'} · ${formatDate(a.date)}${a.time ? ' · ' + a.time : ''} · ${a.hours}h`;
+  const img = document.getElementById('view-comp-img');
+  img.src = a.comprovante;
+  const dl = document.getElementById('view-comp-download');
+  dl.href = a.comprovante;
+  openModal('modal-ver-comprovante');
 }
 
 function abrirAnalise(id) {
@@ -3731,7 +3773,7 @@ Object.assign(window, {
   confirmActivity, doConfirm,
   promptConfirm, openComprovante, enviarComprovante, removePreview,
   handleFileSelect, handleDrop,
-  abrirAnalise, aprovarAtividade, reprovarAtividade,
+  abrirAnalise, aprovarAtividade, reprovarAtividade, verComprovante,
   renderTeacherActivities, renderTeacherHistory, renderTeachersTable, renderActivitiesTable,
   changePassword, saveHourlyRates,
   addActivityType, removeActivityType,
