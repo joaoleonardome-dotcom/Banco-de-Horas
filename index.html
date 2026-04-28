@@ -1128,9 +1128,10 @@
           <button onclick="teacherNextMonth()" id="t-next-month-btn" style="background:rgba(255,255,255,0.2);border:none;color:#fff;font-size:22px;width:44px;height:44px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;touch-action:manipulation;">›</button>
         </div>
         <div class="hours-hero">
-          <div>
+          <div style="flex:1;">
             <h2 id="t-hours-label">Horas do Mês</h2>
             <div class="big-num" id="t-total-hours">0 <span>hrs</span></div>
+            <div id="t-total-value" style="font-size:14px;font-weight:600;color:rgba(255,255,255,0.85);margin-top:4px;letter-spacing:0.3px;">R$ 0,00 aprovados</div>
           </div>
           <div class="hero-icon">⏱️</div>
         </div>
@@ -2370,6 +2371,8 @@ function renderTeacherDashboard() {
   const fmtHrs = h => Number.isInteger(h) ? h : h.toFixed(1);
 
   document.getElementById('t-total-hours').innerHTML = `${fmtHrs(totalHrs)} <span>hrs</span>`;
+  const totalVal = aprovadas.reduce((s,a) => s + (getActivityRate(a) * a.hours), 0);
+  document.getElementById('t-total-value').textContent = `${fmtBRL(totalVal)} aprovados`;
 
   // Badge de pendentes usa TODAS as atividades (não só do mês)
   const allPend = allActs.filter(a => ['pendente','aguardando_comprovante','reprovado'].includes(a.status));
@@ -2436,6 +2439,7 @@ function activityCard(a, showActions=false) {
           <span>⏱ ${a.hours}h</span>
           <span>🏷 ${a.type}</span>
           ${a.segment ? `<span>${segTag(a.segment)}</span>` : ''}
+          ${(() => { const val = getActivityRate(a) * a.hours; return val > 0 ? `<span style="font-weight:600;color:var(--primary);">💰 ${fmtBRL(val)}</span>` : ''; })()}
         </div>
         ${a.desc ? `<div style="font-size:12px;color:var(--text3);margin-top:4px;">${a.desc}</div>` : ''}
         ${obsHtml}
