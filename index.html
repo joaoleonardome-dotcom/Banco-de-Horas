@@ -2281,7 +2281,17 @@ function closeModal(id) { document.getElementById(id).classList.remove('open'); 
 // TEACHER DASHBOARD
 // ══════════════════════════════════
 // ── Controle de mês da visão do professor ──
-const teacherMonthState = { year: new Date().getFullYear(), month: new Date().getMonth() };
+// Inicializa no ciclo corrente: se hoje já passou do dia 25, o ciclo ativo
+// é o do PRÓXIMO mês (pois o ciclo vai do dia 26 ao 25 do mês seguinte).
+// Ex: dia 27/04 → ciclo ativo é Maio (26/04 a 25/05), não Abril.
+const _now = new Date();
+const _initMonth = _now.getDate() > 25
+  ? (_now.getMonth() === 11 ? 0  : _now.getMonth() + 1)
+  : _now.getMonth();
+const _initYear  = _now.getDate() > 25 && _now.getMonth() === 11
+  ? _now.getFullYear() + 1
+  : _now.getFullYear();
+const teacherMonthState = { year: _initYear, month: _initMonth };
 const MONTH_NAMES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
 function teacherPrevMonth() {
@@ -2291,8 +2301,15 @@ function teacherPrevMonth() {
 }
 
 function teacherNextMonth() {
+  // Bloqueia avanço além do ciclo ativo corrente (determinado pelo dia atual)
   const now = new Date();
-  if (teacherMonthState.year === now.getFullYear() && teacherMonthState.month === now.getMonth()) return;
+  const activeCycleMonth = now.getDate() > 25
+    ? (now.getMonth() === 11 ? 0  : now.getMonth() + 1)
+    : now.getMonth();
+  const activeCycleYear = now.getDate() > 25 && now.getMonth() === 11
+    ? now.getFullYear() + 1
+    : now.getFullYear();
+  if (teacherMonthState.year === activeCycleYear && teacherMonthState.month === activeCycleMonth) return;
   if (teacherMonthState.month === 11) { teacherMonthState.month = 0; teacherMonthState.year++; }
   else { teacherMonthState.month++; }
   renderTeacherDashboard();
@@ -2330,7 +2347,14 @@ function renderTeacherDashboard() {
 
   // Atualiza label do mês e botão avançar
   const now = new Date();
-  const isCurrentMonth = year === now.getFullYear() && month === now.getMonth();
+  // "Ciclo ativo" depende do dia: após o dia 25, o ciclo já é do próximo mês
+  const activeCycleMonth = now.getDate() > 25
+    ? (now.getMonth() === 11 ? 0  : now.getMonth() + 1)
+    : now.getMonth();
+  const activeCycleYear = now.getDate() > 25 && now.getMonth() === 11
+    ? now.getFullYear() + 1
+    : now.getFullYear();
+  const isCurrentMonth = year === activeCycleYear && month === activeCycleMonth;
   const cycleLabel = formatCycleRange(year, month);
   document.getElementById('t-month-label').textContent = `${MONTH_NAMES[month]} ${year}`;
   document.getElementById('t-hours-label').textContent = cycleLabel;
