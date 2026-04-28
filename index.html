@@ -2308,10 +2308,12 @@ function closeModal(id) { document.getElementById(id).classList.remove('open'); 
 // Inicializa no ciclo corrente: se hoje já passou do dia 25, o ciclo ativo
 // é o do PRÓXIMO mês (pois o ciclo vai do dia 26 ao 25 do mês seguinte).
 // Ex: dia 27/04 → ciclo ativo é Maio (26/04 a 25/05), não Abril.
+// teacherMonthState.month usa base 1–12 (igual a getCycleRange).
+// Ex: maio = 5, dezembro = 12.
 const _now = new Date();
 const _initMonth = _now.getDate() > 25
-  ? (_now.getMonth() === 11 ? 0  : _now.getMonth() + 1)
-  : _now.getMonth();
+  ? (_now.getMonth() === 11 ? 1  : _now.getMonth() + 2)   // mês seguinte, base 1-12
+  : _now.getMonth() + 1;                                   // mês atual, base 1-12
 const _initYear  = _now.getDate() > 25 && _now.getMonth() === 11
   ? _now.getFullYear() + 1
   : _now.getFullYear();
@@ -2319,22 +2321,21 @@ const teacherMonthState = { year: _initYear, month: _initMonth };
 const MONTH_NAMES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
 function teacherPrevMonth() {
-  if (teacherMonthState.month === 0) { teacherMonthState.month = 11; teacherMonthState.year--; }
+  if (teacherMonthState.month === 1) { teacherMonthState.month = 12; teacherMonthState.year--; }
   else { teacherMonthState.month--; }
   renderTeacherDashboard();
 }
 
 function teacherNextMonth() {
-  // Bloqueia avanço além do ciclo ativo corrente (determinado pelo dia atual)
   const now = new Date();
   const activeCycleMonth = now.getDate() > 25
-    ? (now.getMonth() === 11 ? 0  : now.getMonth() + 1)
-    : now.getMonth();
+    ? (now.getMonth() === 11 ? 1  : now.getMonth() + 2)
+    : now.getMonth() + 1;
   const activeCycleYear = now.getDate() > 25 && now.getMonth() === 11
     ? now.getFullYear() + 1
     : now.getFullYear();
   if (teacherMonthState.year === activeCycleYear && teacherMonthState.month === activeCycleMonth) return;
-  if (teacherMonthState.month === 11) { teacherMonthState.month = 0; teacherMonthState.year++; }
+  if (teacherMonthState.month === 12) { teacherMonthState.month = 1; teacherMonthState.year++; }
   else { teacherMonthState.month++; }
   renderTeacherDashboard();
 }
@@ -2342,8 +2343,12 @@ function teacherNextMonth() {
 // Retorna {start, end} do ciclo de pagamento para um dado mês de referência
 // "Abril 2025" = 26/03/2025 até 25/04/2025
 function getCycleRange(year, month) {
-  const start = new Date(year, month - 1, 26); // dia 26 do mês anterior
-  const end   = new Date(year, month, 25);      // dia 25 do mês corrente
+  // month é base 1–12 (ex: maio = 5).
+  // Ciclo de maio = 26/04 a 25/05:
+  //   start = dia 26 do mês anterior → índice JS = month - 2
+  //   end   = dia 25 do próprio mês  → índice JS = month - 1
+  const start = new Date(year, month - 2, 26);
+  const end   = new Date(year, month - 1, 25);
   return { start, end };
 }
 
@@ -2373,14 +2378,14 @@ function renderTeacherDashboard() {
   const now = new Date();
   // "Ciclo ativo" depende do dia: após o dia 25, o ciclo já é do próximo mês
   const activeCycleMonth = now.getDate() > 25
-    ? (now.getMonth() === 11 ? 0  : now.getMonth() + 1)
-    : now.getMonth();
+    ? (now.getMonth() === 11 ? 1  : now.getMonth() + 2)
+    : now.getMonth() + 1;
   const activeCycleYear = now.getDate() > 25 && now.getMonth() === 11
     ? now.getFullYear() + 1
     : now.getFullYear();
   const isCurrentMonth = year === activeCycleYear && month === activeCycleMonth;
   const cycleLabel = formatCycleRange(year, month);
-  document.getElementById('t-month-label').textContent = `${MONTH_NAMES[month]} ${year}`;
+  document.getElementById('t-month-label').textContent = `${MONTH_NAMES[month - 1]} ${year}`;
   document.getElementById('t-hours-label').textContent = cycleLabel;
   const nextBtn = document.getElementById('t-next-month-btn');
   if (nextBtn) nextBtn.style.opacity = isCurrentMonth ? '0.3' : '1';
@@ -2499,16 +2504,16 @@ function populateHistMonthSelect() {
   const months = new Set();
   acts.forEach(a => {
     const d = new Date(a.date + 'T00:00:00');
-    months.add(`${d.getFullYear()}-${String(d.getMonth()).padStart(2,'0')}`);
+    months.add(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2,'0')}`);
   });
   const now = new Date();
-  const nowKey = `${now.getFullYear()}-${String(now.getMonth()).padStart(2,'0')}`;
+  const nowKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2,'0')}`;
   months.add(nowKey);
   const sorted = [...months].sort().reverse();
   sel.innerHTML = `<option value="all">Todos os meses</option>` +
     sorted.map(m => {
       const [y, mo] = m.split('-');
-      return `<option value="${m}">${MONTH_NAMES[parseInt(mo)]} ${y}</option>`;
+      return `<option value="${m}">${MONTH_NAMES[parseInt(mo) - 1]} ${y}</option>`;
     }).join('');
   // Define mês atual como padrão
   sel.value = nowKey;
@@ -2522,7 +2527,7 @@ function renderTeacherHistory() {
   let acts = getTeacherActivities(t.id).sort((a,b) => b.date.localeCompare(a.date));
   if (filterVal && filterVal !== 'all') {
     const [fy, fm] = filterVal.split('-').map(Number);
-    // Ciclo: 26 do mês anterior até 25 do mês corrente
+    // fm já está em base 1-12, getCycleRange espera base 1-12
     const { start, end } = getCycleRange(fy, fm);
     acts = acts.filter(a => {
       const d = new Date(a.date + 'T00:00:00');
