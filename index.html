@@ -1677,7 +1677,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
   getFirestore, doc, collection,
-  getDocs, setDoc, deleteDoc, onSnapshot
+  getDocs, setDoc, updateDoc, deleteDoc, onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -1704,6 +1704,11 @@ async function fbSaveActivity(activity) {
   const { id, ...data } = activity;
   // comprovante agora é uma URL do Cloudinary (não mais base64)
   await setDoc(doc(db, 'activities', String(id)), data);
+}
+// Atualiza apenas campos específicos de uma atividade sem sobrescrever o documento inteiro.
+// Usado em aprovação/reprovação para evitar race condition entre dispositivos.
+async function fbPatchActivity(id, fields) {
+  await updateDoc(doc(db, 'activities', String(id)), fields);
 }
 async function fbDeleteActivity(id) {
   await deleteDoc(doc(db, 'activities', String(id)));
@@ -1768,23 +1773,49 @@ let _syncListeners = { config: false, teachers: false, activities: false };
 let _unsubscribers = [];
 
 function _refreshAllUI() {
+  // Sempre atualiza dados de seleção independente de qual página está visível
   populateTeacherSelect();
   refreshActivityTypeSelect();
-  const coordActive = document.getElementById('app-coord')?.classList.contains('active');
-  const teacherActive = document.getElementById('app-teacher')?.classList.contains('active');
+
+  // Determina qual app está ativo verificando o DOM diretamente
+  const appCoordEl  = document.getElementById('app-coord');
+  const appTeacherEl = document.getElementById('app-teacher');
+  const coordActive   = appCoordEl  ? appCoordEl.classList.contains('active')  : false;
+  const teacherActive = appTeacherEl ? appTeacherEl.classList.contains('active') : false;
+
   if (coordActive) {
-    renderCoordDashboard();
-    renderTeachersTable();
-    renderActivitiesTable();
-    renderRelatorio();
-    updateAnaliseBadge();
+    try { renderCoordDashboard(); }   catch(e) { console.error('renderCoordDashboard:', e); }
+    try { renderTeachersTable(); }    catch(e) { console.error('renderTeachersTable:', e); }
+    try { renderActivitiesTable(); }  catch(e) { console.error('renderActivitiesTable:', e); }
+    try { renderRelatorio(); }        catch(e) { console.error('renderRelatorio:', e); }
+    try { updateAnaliseBadge(); }     catch(e) { console.error('updateAnaliseBadge:', e); }
   }
-  if (teacherActive && state.currentTeacher) {
+
+  // BUG FIX: atualiza UI do professor mesmo que não seja a página "ativa" no momento exato
+  // do snapshot — no celular, o app pode estar em background e app-teacher pode não ter
+  // a classe 'active' naquele instante, mas o professor está logado e precisa ver os dados.
+  // A solução: se currentTeacher existir, SEMPRE atualiza, independente da página visível.
+  if (state.currentTeacher) {
+    // Mantém currentTeacher sincronizado com o state mais recente
     const updated = state.teachers.find(t => t.id === state.currentTeacher.id);
     if (updated) state.currentTeacher = updated;
-    renderTeacherDashboard();
-    renderTeacherActivities();
-    renderTeacherHistory();
+
+    if (teacherActive) {
+      // Descobre qual painel interno está ativo e renderiza só ele + dashboard
+      const dashActive  = document.getElementById('t-panel-dashboard')?.classList.contains('active');
+      const atvsActive  = document.getElementById('t-panel-atividades')?.classList.contains('active');
+      const histActive  = document.getElementById('t-panel-historico')?.classList.contains('active');
+
+      try { renderTeacherDashboard(); } catch(e) { console.error('renderTeacherDashboard:', e); }
+      if (atvsActive) {
+        try { renderTeacherActivities(); } catch(e) { console.error('renderTeacherActivities:', e); }
+      }
+      if (histActive) {
+        try { renderTeacherHistory(); } catch(e) { console.error('renderTeacherHistory:', e); }
+      }
+    }
+    // Se app-teacher não está ativo agora (celular em background), marca que precisa de refresh
+    // e atualiza quando o usuário voltar — o visibilitychange já cuida disso.
   }
 }
 
@@ -1825,28 +1856,45 @@ function startRealtimeSync() {
     } catch(e) { console.error('onSnapshot teachers handler:', e); }
   }, e => { console.warn('onSnapshot teachers:', e); _syncListeners.teachers = true; });
 
-  // Atividades — BUG FIX: try/catch garante que erros de render não
-  // silenciem o listener. Sem isso, um TypeError em renderTeacherActivities()
-  // (quando currentTeacher é null) fazia o onSnapshot parar de funcionar
-  // no celular após a primeira aprovação.
-  const unsubActivities = onSnapshot(collection(db, 'activities'), snap => {
-    try {
-      state.activities = [];
-      snap.forEach(d => state.activities.push({ id: Number(d.id), ...d.data() }));
-      const firstLoad = !_syncListeners.activities;
-      _syncListeners.activities = true;
-      if (!firstLoad) _refreshAllUI();
-    } catch(e) { console.error('onSnapshot activities handler:', e); }
-  }, e => { console.warn('onSnapshot activities:', e); _syncListeners.activities = true; });
+  // Atividades
+  // BUG FIX: includeMetadataChanges=true permite detectar hasPendingWrites.
+  // Assinatura correta do SDK v9: onSnapshot(ref, options, callback, errorHandler)
+  const unsubActivities = onSnapshot(
+    collection(db, 'activities'),
+    { includeMetadataChanges: true },
+    snap => {
+      try {
+        // Ignora snapshots com escritas locais ainda não confirmadas pelo servidor.
+        // Quando o PC salva uma aprovação, o Firebase emite um snapshot local imediato
+        // (hasPendingWrites=true). O celular recebia esse intermediário e ficava travado
+        // mostrando "em análise" pois o status ainda não era o definitivo do servidor.
+        const hasLocalWrites = snap.docChanges().some(c => c.doc.metadata.hasPendingWrites);
+        if (hasLocalWrites) return;
+
+        state.activities = [];
+        snap.forEach(d => state.activities.push({ id: Number(d.id), ...d.data() }));
+        const firstLoad = !_syncListeners.activities;
+        _syncListeners.activities = true;
+        if (!firstLoad) _refreshAllUI();
+      } catch(e) { console.error('onSnapshot activities handler:', e); }
+    },
+    e => { console.warn('onSnapshot activities error:', e); _syncListeners.activities = true; }
+  );
 
   _unsubscribers = [unsubConfig, unsubTeachers, unsubActivities];
 }
 
-// BUG FIX: quando o app volta do background no celular, força refresh da UI
-// pois o Firebase pode ter bufferizado atualizações enquanto estava em segundo plano
+// Quando o app volta do background no celular, força refresh completo da UI.
+// O Firebase entrega os snapshots bufferizados, mas a UI precisa ser re-renderizada
+// explicitamente porque o app-teacher pode não ter sido marcado como 'active'
+// enquanto estava em segundo plano.
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') {
-    _refreshAllUI();
+    // Pequeno delay para garantir que os snapshots pendentes do Firebase
+    // já foram processados antes de renderizar
+    setTimeout(() => {
+      try { _refreshAllUI(); } catch(e) { console.error('visibilitychange _refreshAllUI:', e); }
+    }, 150);
   }
 });
 
@@ -2870,41 +2918,48 @@ function abrirAnalise(id) {
 
 async function aprovarAtividade() {
   const a = state.activities.find(x => x.id === state.confirmActivityId);
-  if (a) {
-    a.status = 'aprovado';
-    a.obs = document.getElementById('anal-obs').value.trim() || null;
-  }
+  const obs = document.getElementById('anal-obs').value.trim() || null;
   closeModal('modal-analisar');
+  if (!a) return;
+
+  // Atualiza state local imediatamente para o PC ver na hora
+  a.status = 'aprovado';
+  a.obs = obs;
   renderActivitiesTable();
   renderCoordDashboard();
   renderRelatorio();
   updateAnaliseBadge();
-  // Atualiza tela do professor (mesmo dispositivo ou via realtime sync)
-  renderTeacherDashboard();
-  renderTeacherActivities();
-  renderTeacherHistory();
   showToast('Comprovante aprovado! Horas contabilizadas.');
-  try { if (a) await fbSaveActivity(a); } catch(e) { console.error('Firebase aprovarAtividade:', e); }
+
+  // BUG FIX: usa fbPatchActivity (updateDoc) em vez de setDoc completo.
+  // Isso evita sobrescrever campos que o celular possa ter atualizado
+  // simultaneamente, e garante que o onSnapshot do celular receba
+  // exatamente os campos alterados (status + obs) de forma atômica.
+  try {
+    await fbPatchActivity(a.id, { status: 'aprovado', obs });
+  } catch(e) { console.error('Firebase aprovarAtividade:', e); }
 }
 
 async function reprovarAtividade() {
   const obs = document.getElementById('anal-obs').value.trim();
   if (!obs) { showToast('Informe o motivo da reprovação na observação.', 'error'); return; }
   const a = state.activities.find(x => x.id === state.confirmActivityId);
-  if (a) {
-    a.status = 'reprovado';
-    a.obs = obs;
-  }
   closeModal('modal-analisar');
+  if (!a) return;
+
+  // Atualiza state local imediatamente para o PC ver na hora
+  a.status = 'reprovado';
+  a.obs = obs;
   renderActivitiesTable();
   renderCoordDashboard();
   renderRelatorio();
   updateAnaliseBadge();
-  renderTeacherDashboard();
-  renderTeacherActivities();
-  renderTeacherHistory();
   showToast('Comprovante reprovado. Professor será notificado para reenvio.');
-  try { if (a) await fbSaveActivity(a); } catch(e) { console.error('Firebase reprovarAtividade:', e); }
+
+  // BUG FIX: usa fbPatchActivity (updateDoc) — atualização atômica de status+obs
+  try {
+    await fbPatchActivity(a.id, { status: 'reprovado', obs });
+  } catch(e) { console.error('Firebase reprovarAtividade:', e); }
 }
 
 // ══════════════════════════════════
